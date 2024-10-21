@@ -1,50 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Table } from 'react-bootstrap';
-
-const initialUsers = [
-    { id: 1, name: 'Ted MAYOMBO', role: 'SuperAdmin', email: 'kambabilolamays@gmail.com', telephone: '077329495', password: '' },
-    { id: 2, name: 'Christian MILENZI', role: 'Bartender', email: 'jane@example.com', telephone: '077349495', password: '' },
-    { id: 3, name: 'Entre nous', role: 'BarOwner', email: 'jane@example.com', telephone: '077339495', password: '' },
-];
+import { getAllObjectStoreDataExec, getObjectStoreDataExec, addToObjectStoreExec, updateObjectStoreExec, deleteFromObjectStoreExec } from '../database/indexedDB'; // Import your updated IndexedDB helper functions
 
 const UserManagement = () => {
-    const [users, setUsers] = useState(initialUsers);
+    const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', role: '', email: '', telephone: '', password: '' });
+    const [newUser, setNewUser] = useState({
+        uid: '',
+        displayName: '',
+        photoURL: '',
+        email: '',
+        createdAt: '',
+        lastLoginAt: '',
+        barControled: '',
+        fullName: '',
+        phone: '',
+        password: '',
+        role: '',
+        Subscription: ''
+    });
     const [editIndex, setEditIndex] = useState(null);
+    const [editingUserId, setEditingUserId] = useState(null); // Store the ID of the user being edited
+
+    // Load users from IndexedDB on component mount
+    useEffect(() => {
+        const loadUsers = async () => {
+            console.log("loading users ... ");
+            const userList = await getAllObjectStoreDataExec('Users'); // Fetch users from IndexedDB
+            setUsers(userList);
+            console.log("loading users ... ", userList);
+        };
+        loadUsers();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewUser({ ...newUser, [name]: value });
     };
 
-    const handleSaveUser = () => {
+    const handleSaveUser = async () => {
         if (editIndex !== null) {
+            // Update existing user
+            const updatedUser = { ...newUser, uid: editingUserId }; // Use the saved ID
+            await updateObjectStoreExec('Users', updatedUser); // Update user in IndexedDB
             const updatedUsers = [...users];
-            updatedUsers[editIndex] = newUser;
+            updatedUsers[editIndex] = updatedUser;
             setUsers(updatedUsers);
         } else {
-            setUsers([...users, { ...newUser, id: users.length + 1 }]);
+            // Add new user
+            const newUserId = await addToObjectStoreExec('Users', newUser); // Add user to IndexedDB and get the new ID
+            setUsers([...users, { ...newUser, uid: newUserId }]);
         }
-        setNewUser({ name: '', role: '', email: '', telephone: '', password: '' });
+        setNewUser({
+            uid: '',
+            displayName: '',
+            photoURL: '',
+            email: '',
+            createdAt: '',
+            lastLoginAt: '',
+            barControled: '',
+            fullName: '',
+            phone: '',
+            password: '',
+            role: '',
+            Subscription: ''
+        });
         setShowModal(false);
     };
 
     const handleEditUser = (index) => {
         setNewUser(users[index]);
         setEditIndex(index);
+        setEditingUserId(users[index].uid); // Store the ID for the user being edited
         setShowModal(true);
     };
 
-    const handleDeleteUser = (index) => {
-        if (window.confirm('Êtes vous sûr de vouloir supprimmer cet utilisateur?')) {
+    const handleDeleteUser = async (index) => {
+        if (window.confirm('Êtes vous sûr de vouloir supprimer cet utilisateur?')) {
+            const userId = users[index].uid;
+            await deleteFromObjectStoreExec('Users', userId); // Delete user from IndexedDB
             setUsers(users.filter((_, i) => i !== index));
         }
     };
 
     const handleAddUser = () => {
         setEditIndex(null);
-        setNewUser({ name: '', role: '', email: '', telephone: '', password: '' });
+        setNewUser({
+            uid: '',
+            displayName: '',
+            photoURL: '',
+            email: '',
+            createdAt: '',
+            lastLoginAt: '',
+            barControled: '',
+            fullName: '',
+            phone: '',
+            password: '',
+            role: '',
+            Subscription: ''
+        });
         setShowModal(true);
     };
 
@@ -55,65 +109,69 @@ const UserManagement = () => {
                 Créer un utilisateur
             </Button>
 
-            <Table striped bordered hover className="mt-3">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Role</th>
-                        <th>Email</th>
-                        <th>Telephone</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((user, index) => (
-                        <tr key={user.id}>
-                            <td>{user.name}</td>
-                            <td>{user.role}</td>
-                            <td>{user.email}</td>
-                            <td>{user.telephone}</td>
-                            <td>
-                                <Button variant="warning" onClick={() => handleEditUser(index)} className="me-2">
-                                    Modifier
-                                </Button>
-                                <Button variant="danger" onClick={() => handleDeleteUser(index)}>
-                                    Supprimer
-                                </Button>
-                            </td>
+            <div className="table-responsive mt-3"> {/* Make table responsive */}
+                <Table striped bordered hover>
+                    <thead>
+                        <tr>
+                            <th>Nom Complet</th>
+                            <th>Nom d'affichage</th>
+                            <th>Email</th>
+                            <th>Téléphone</th>
+                            <th>Bar Contrôlé</th>
+                            <th>Dernière Connexion</th>
+                            <th>Rôle</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {users.map((user, index) => (
+                            <tr key={user.uid}>
+                                <td>{user.fullName}</td>
+                                <td>{user.displayName}</td>
+                                <td>{user.email}</td>
+                                <td>{user.phone}</td>
+                                <td>{user.barControled}</td>
+                                <td>{user.lastLoginAt}</td>
+                                <td>{user.role}</td>
+                                <td>
+                                    <Button variant="warning" onClick={() => handleEditUser(index)} className="me-2">
+                                        Modifier
+                                    </Button>
+                                    <Button variant="danger" onClick={() => handleDeleteUser(index)}>
+                                        Supprimer
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>{editIndex !== null ? 'Edit User' : 'Add User'}</Modal.Title>
+                    <Modal.Title>{editIndex !== null ? 'Modifier Utilisateur' : 'Ajouter Utilisateur'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
-                        <Form.Group controlId="formName">
-                            <Form.Label>Name</Form.Label>
+                        <Form.Group controlId="formFullName">
+                            <Form.Label>Nom Complet</Form.Label>
                             <Form.Control
                                 type="text"
-                                name="name"
-                                value={newUser.name}
+                                name="fullName"
+                                value={newUser.fullName}
                                 onChange={handleInputChange}
                                 required
                             />
                         </Form.Group>
-                        <Form.Group controlId="formRole" className="mt-3">
-                            <Form.Label>Role</Form.Label>
-                            <Form.Select
-                                name="role"
-                                value={newUser.role}
+                        <Form.Group controlId="formDisplayName" className="mt-3">
+                            <Form.Label>Nom d'affichage</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="displayName"
+                                value={newUser.displayName}
                                 onChange={handleInputChange}
                                 required
-                            >
-                                <option value="">Select Role</option>
-                                <option value="SuperAdmin">SuperAdmin</option>
-                                <option value="Bartender">Bartender</option>
-                                <option value="BarOwner">BarOwner</option>
-                            </Form.Select>
+                            />
                         </Form.Group>
                         <Form.Group controlId="formEmail" className="mt-3">
                             <Form.Label>Email</Form.Label>
@@ -125,32 +183,46 @@ const UserManagement = () => {
                             />
                         </Form.Group>
                         <Form.Group controlId="formTelephone" className="mt-3">
-                            <Form.Label>Telephone</Form.Label>
+                            <Form.Label>Téléphone</Form.Label>
                             <Form.Control
                                 type="text"
-                                name="telephone"
-                                value={newUser.telephone}
+                                name="phone"
+                                value={newUser.phone}
                                 onChange={handleInputChange}
                                 required
                             />
                         </Form.Group>
-                        <Form.Group controlId="formPassword" className="mt-3">
-                            <Form.Label>Password</Form.Label>
+                        <Form.Group controlId="formBarControlled" className="mt-3">
+                            <Form.Label>Bar Contrôlé</Form.Label>
                             <Form.Control
-                                type="password"
-                                name="password"
-                                value={newUser.password}
+                                type="text"
+                                name="barControled"
+                                value={newUser.barControled}
                                 onChange={handleInputChange}
                             />
+                        </Form.Group>
+                        <Form.Group controlId="formRole" className="mt-3">
+                            <Form.Label>Rôle</Form.Label>
+                            <Form.Select
+                                name="role"
+                                value={newUser.role}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="">Sélectionner Rôle</option>
+                                <option value="SuperAdmin">SuperAdmin</option>
+                                <option value="Bartender">Bartender</option>
+                                <option value="BarOwner">BarOwner</option>
+                            </Form.Select>
                         </Form.Group>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowModal(false)}>
-                        Cancel
+                        Annuler
                     </Button>
                     <Button variant="primary" onClick={handleSaveUser}>
-                        {editIndex !== null ? 'Update User' : 'Add User'}
+                        {editIndex !== null ? 'Modifier Utilisateur' : 'Ajouter Utilisateur'}
                     </Button>
                 </Modal.Footer>
             </Modal>

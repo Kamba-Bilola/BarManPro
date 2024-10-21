@@ -1,13 +1,134 @@
+
 body {
-  margin: 0;
+  margin: 0 auto;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+ 
+ 
+  overflow-x: hidden;
+  background-color: aliceblue;
+  border: 1px solid #eee;
+  
 }
-
+#root {
+  margin: 0 auto;
+  overflow-x: hidden;
+  background-color: #fefefe;
+}
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+.indication-bar{background-color: #0B25AA; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+.logo img, .logo svg {
+  max-width: 64px;
+  width: 64px;
+}
+.row>* {
+  flex-shrink: 0;
+  width: auto!important;
+}
+
+.col-8-custom {
+  flex: 0 0 12.5%; /* 100% / 8 = 12.5% for each column */
+  max-width: 12.5%;
+}
+.border-box {
+  height: 30px;
+  overflow: hidden;
+  
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(8, 12.5%); /* 8 equal columns */
+  
+}
+
+/* Rowspan */
+.rowspan2 {
+  grid-row: span 2;
+  height: 60px;
+}
+
+/* Colspan */
+.colspan2 {
+  grid-column: span 2;
+}
+
+.colspan4 {
+  grid-column: span 4;
+}
+
+.colspan5 {
+  grid-column: span 5;
+}
+#logo svg {
+  height: 53px;
+  margin-top: 6px;
+  max-width: 100%;
+}
+#user_btn{text-align: left;}
+#brand_name{
+  padding-left: 5px;
+  padding-top: 7px;
+}
+#brand_name span {
+  padding-top: 10px;
+    font-weight: bold;
+    font-size: 10px;
+}
+#brand_name  button {
+  background: #ea391f;
+  border: 0;
+  text-align: center;
+  margin-left: 15px;
+  padding: 0px 5px 1px 5px;
+  line-height: 1;
+  font-size: 10px;
+  border-radius: 3px;
+}
+#user_btn svg{ display: inline; float: left; }
+#user_btn span{display: inline;}
+#brand_name,#bar_name{ padding-left: 5px;}
+
+#bar_name {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 0;
+  padding-top: 8px;
+}
+#menu_bars svg { max-width: 40px;}
+#menu_bars {   padding-top: 10px; }
+#dayswitch .form-switch {
+  padding: 0;
+  height: 100%;
+}
+#dayswitch .form-switch input {
+  width: 70%;
+  margin-left: 0px;
+  border: 2px solid #fff;
+  height: 20px;
+  margin-top: 9px;
+}
+#amount {
+  font-size: 26px;
+  font-weight: bold;
+  line-height: 1;
+}
+#sales_report button{
+  background: #ea391f;
+  border: 0;
+  height: 100%;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  width: 100%;
+}
+.fcfa{ font-size: 15px;}
+form footer{ margin: 30px 0;}

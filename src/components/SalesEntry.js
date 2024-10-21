@@ -1,10 +1,8 @@
 
 // src/components/salesEntry.js
-import React, { useState } from 'react'; // Import useState from React
-import { useSelector, useDispatch } from 'react-redux';
-import { addItem, removeItem , showSalesModal} from '../redux/slices/indicationSlice';
-import { Modal, Button, Table } from 'react-bootstrap';
-import IndicationBar from './IndicationBar'; // Import the IndicationBar component
+import React, { useState } from 'react';
+//import { Modal, Button, Form, Table } from 'react-bootstrap';
+import { Modal,Button, ButtonGroup, ToggleButton, Form, Table } from 'react-bootstrap';
 
 // Mock data for items
 const initialItems = [
@@ -83,22 +81,39 @@ const initialItems = [
 
 const SalesEntry = () => {
   // States for managing sales and UI behavior
-  const dispatch = useDispatch();
-  const { sales, showSalesModal: isModalVisible, dayStarted } = useSelector((state) => state.indication);
+  const [items, setItems] = useState(initialItems);
+  const [sales, setSales] = useState([]);
+  const [dayStarted, setDayStarted] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [startAmount, setStartAmount] = useState(10000); // Example starting amount
+  const [currentAmount, setCurrentAmount] = useState(0);
+  const [showSalesModal, setShowSalesModal] = useState(false);
 
-  const [items] = useState(initialItems);
-
-
+  // Function to handle starting and ending the day
+  const handleToggleDay = (e) => {
+    const shouldStartDay = !dayStarted; // Toggle the current state
+    if (shouldStartDay) {
+      if (window.confirm('Are you sure you want to start the day?')) {
+        setDayStarted(true);
+        setStartDate(new Date().toLocaleString()); // Set the current date and time when starting the day
+        // Your additional logic for starting the day
+      }
+    } else {
+      if (window.confirm('Are you sure you want to end the day?')) {
+        // Update the starting amount by adding the current amount to it
+        setStartAmount(startAmount + currentAmount);
+        setCurrentAmount(0); // Reset current amount for the next day
+      }
+    }
+  };
+  
 
   // Function to handle adding an item to the day's sales
   const handleAddItem = (item) => {
-    dispatch(addItem(item));
+    const updatedSales = [...sales, item];
+    setSales(updatedSales);
+    setCurrentAmount(currentAmount + item.price);
   };
-  // Function to handle removing an item from the day's sales
-  const handleRemoveItem = (item) => {
-    dispatch(removeItem(item));
-  };
-  
   const [currentSizeIndex, setCurrentSizeIndex] = useState({}); // To track the current size index for each item
 
   const handleArrowClick = (direction, item) => {
@@ -118,13 +133,40 @@ const SalesEntry = () => {
       });
     }
   };
-  
-  
+  // Function to handle removing an item from the day's sales
+  const handleRemoveItem = (item) => {
+    const updatedSales = sales.filter((sale) => sale.id !== item.id);
+    setSales(updatedSales);
+    setCurrentAmount(currentAmount - item.price);
+  };
+
+  // Function to display sales of the day
+  const handleViewSales = () => {
+    setShowSalesModal(true);
+  };
 
   return (
     <div className="container mt-4">
-      {/* Use IndicationBar Component */}
-      <IndicationBar />
+      {/* Indication Bar */}
+      <div className="indication-bar d-flex justify-content-between align-items-center mb-4">
+      
+      <Form.Check
+          type="switch"
+          id="day-toggle-switch"
+          label={dayStarted ? 'End the Day' : 'Start the Day'}
+          checked={dayStarted}
+          onChange={handleToggleDay}
+          className={dayStarted ? 'text-danger' : 'text-success'}
+        />
+        <div>
+          <span>Date & Time: {startDate || 'Not started'}</span>
+          <span className="ms-3">Starting Amount: {startAmount} (FCFA)</span>
+          <span className="ms-3">Current Amount: {currentAmount} (FCFA)</span>
+          <Button variant="info" className="ms-3" onClick={handleViewSales}>
+            View Sales of the Day
+          </Button>
+        </div>
+      </div>
 
       {/* Stock Update Section */}
       <div className="stock-update-section">
@@ -184,7 +226,7 @@ const SalesEntry = () => {
       </div>
 
       {/* Modal to display sales of the day */}
-      <Modal show={isModalVisible} onHide={() => dispatch(showSalesModal(false))}>
+      <Modal show={showSalesModal} onHide={() => setShowSalesModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Sales of the Day</Modal.Title>
         </Modal.Header>
@@ -212,7 +254,7 @@ const SalesEntry = () => {
           </Table>
         </Modal.Body>
         <Modal.Footer>
-        <Button variant="secondary" onClick={() => dispatch(showSalesModal(false))}>
+          <Button variant="secondary" onClick={() => setShowSalesModal(false)}>
             Close
           </Button>
         </Modal.Footer>
