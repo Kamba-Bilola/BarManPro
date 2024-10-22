@@ -1,7 +1,7 @@
 //database/indexedDB.js
 import store from '../redux/store'; // Adjust the path
 import { setNotification } from '../redux/slices/notificationSlice'; // Import your notification actions
-import {getDeviceDetails} from "../components/devOptions";
+//import {getDeviceDetails} from "../components/devOptions";
 import {auth, myFirestoreDb} from "../database/firebase";
 import { collection, doc, addDoc, setDoc, deleteDoc } from "firebase/firestore";
 import {syncToFirestore, dispatchSyncEvent, retryUpdateSyncRecordStatus, testUpdateSyncRecordStatus, performFirestoreOperation, updateSyncRecordStatus, logSyncOperation,} from "./sync.js"
@@ -753,7 +753,7 @@ export const appDefaultConfData = {
   model: 'Pixel 5',
   lastSyncDate: new Date().toISOString()
 };
-getDeviceDetails
+
 
 // Example usage: Add data to the sync_table
 const syncTableData = {
@@ -904,10 +904,10 @@ export const setFieldValues = (objectStoreName, fieldName, fieldValue, updates) 
       };
 
       request.onerror = (error) => {
-        consol.log(`Error reading data from ${objectStoreName}: ${error.target.error}`);
+        console.log(`Error reading data from ${objectStoreName}: ${error.target.error}`);
       };
     }).catch((error) => {
-      consol.log(`Error opening database: ${error}`);
+      console.log(`Error opening database: ${error}`);
     });
   });
 };

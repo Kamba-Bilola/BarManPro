@@ -6,8 +6,7 @@ import {
     updateObjectStoreExec, 
     deleteFromObjectStoreExec, 
     getObjectStoreDataExec,
-    getLastIdAndSet,getWhereFieldEqualsExec,setFieldValues 
-} from '../database/indexedDB'; 
+    getLastIdAndSet,getWhereFieldEqualsExec,setFieldValues} from '../database/indexedDB'; 
 import { syncDataWithFirestore } from '../database/syncFromFirestore'; // Import the sync function
 import BarOwner from './BarOwner'; // Import the new BarOwner component
 import BarTender from './BarTender'; // Import BarTender component
@@ -39,6 +38,7 @@ const BarManagement = ({ role, syncStatus, setSyncStatus, handleSync  }) => {
     });
     const [editIndex, setEditIndex] = useState(null);
     const [editingBarId, setEditingBarId] = useState(null);
+    let myPermis = null;
 // Define state for searchQuery and filterTables
 const [searchQuery, setSearchQuery] = useState('');
 const [filterTables, setFilterTables] = useState('');
@@ -108,13 +108,40 @@ const [newUserPermission, setNewUserPermission] = useState({
         setNewLocation({ ...newLocation, [name]: value });
     };
 
+    const buildPermissionData= async () =>{
+        // Get the last ID and set the new ID accordingly for BarUserPermissions
+        const lastId = await getLastIdAndSet("BarUserPermissions");
+        const newId = lastId !== null && lastId !== undefined ? lastId : 1;
+
+        // Load the main user UID and set permission details
+        const mainUserUid = await loadingMainUserUid();
+        const currentDate = new Date();
+        myPermis = {id:newId, userId:mainUserUid, barId: bartenderFormData.uid, grantedBy: bartenderFormData.ownerUid, grantedAt: currentDate, isMainBar: true  }
+    }
     const handleSaveBar = async () => {
         if (editIndex !== null) {
             await updateObjectStoreExec('Bars', newBar.id, newBar);
             const updatedBar = newBar;
             const updatedBars = [...bars];
             updatedBars[editIndex] = updatedBar;
-            setBars(updatedBars);
+            const mainUserUid = await loadingMainUserUid();
+            const recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [mainUserUid,updatedBar.id]);
+            const updateIsMainBar= recordToChange[0].isMainBar;
+            
+            if(updateIsMainBar!==isMainBar)
+            {
+                if(isMainBar===true){
+                await setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false});           
+                //update an existing permission
+                const myUpdatedPermId=recordToChange[0].id;
+                if(myUpdatedPermId){await setFieldValues('BarUserPermissions','id',myUpdatedPermId,{ isMainBar: true}); }
+                else{setNotification({ type: 'error', messages: ["Error handling bar association"]});}
+                    
+                }
+            }
+            
+            return;
+            //setBars(updatedBars);
         } else {
             try {
                 const lastId = await getLastIdAndSet("Bars");
@@ -166,6 +193,7 @@ const [newUserPermission, setNewUserPermission] = useState({
                         const permissionCheckResult = await checkBeforeCRUDExec('BarUserPermissions', newUserPermission);
     
                         if (permissionCheckResult[0] === true) {
+                            await setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false}); 
                             const permissionGranted = await addToObjectStoreExec('BarUserPermissions', newUserPermission, null);
                             if (permissionGranted) {
                                 setNotification({
@@ -377,121 +405,96 @@ const handleAssociateBar = async (e) => {
 
     // Check if a bar is selected
     const selectedBar = bartenderFormData.selectedBar;
-    console.log("::: bartenderFormData: ", bartenderFormData);
-
-    if (!selectedBar) {
-        setNotification({
-            type: 'warning',
-            messages: ["Select a bar from the table below"]
-        });
-        return;
-    } 
+    
+    if (!selectedBar) 
+    {setNotification({type: 'warning',messages: ["Select a bar from the table below"]});return;} 
 
     try {
         // Extract the owner's UID from the selected bar
         const ownerUid = bartenderFormData.ownerUid;
         const barUid = bartenderFormData.uid;
-        console.log("Owner UID:", ownerUid);
-
-        if (!ownerUid) { setNotification({
-                type: 'error',
-                messages: ["Owner UID is missing"]
-            });
-            return;
-        }
-        if (!barUid) {
-            setNotification({
-                type: 'error',
-                messages: ["Bar UID is missing"]
-            });
-            return;
-        }
-
-        // Get the Firestore user details using the owner's UID
-        console.log("Fetching owner details...");
+        if (!ownerUid){setNotification({type: 'error',messages: ["Owner UID is missing"]}); return;}
+        if (!barUid) {setNotification({type: 'error', messages: ["Bar UID is missing"]});return;}
 
         const ownerCollection = collection(myFirestoreDb, "Users"); // Specify your collection
         const ownerSnapshot = await getDocs(ownerCollection); // Fetch documents
         const ownerList = ownerSnapshot.docs.map(doc => doc.data()); // Map to data
-        console.log("Owner list:", ownerList);
-
+        
         // Find the owner with the matching UID
         const owner = ownerList.find((owner) => owner.uid === ownerUid);
-        if (!owner) {
-            setNotification({
-                type: 'error',
-                messages: ["Owner not found in the database"]
-            });
-            return;
-        }
+        if (!owner) {setNotification({ type: 'error', messages: ["Owner not found in the database"]}); return;}
 
-        console.log("Owner details:", owner);
-        
+       
         // Compare phone and password values
         const { ownerPhone, ownerPassword } = bartenderFormData;
         if (ownerPhone !== owner.phone || ownerPassword !== owner.password) {
-            setNotification({
-                type: 'error',
-                messages: ["Owner's phone and password do not match, try again"]
-            });
-            return;
-        }
-
-        console.log("Owner's phone and password match, proceeding...");
+        setNotification({ type: 'error',messages: ["Owner's phone and password do not match, try again"]}); return;}
 
         // Get the last ID and set the new ID accordingly for BarUserPermissions
         const lastId = await getLastIdAndSet("BarUserPermissions");
-        console.log("Last ID:", lastId);
-
         const newId = lastId !== null && lastId !== undefined ? lastId : 1;
 
         // Load the main user UID and set permission details
         const mainUserUid = await loadingMainUserUid();
         const currentDate = new Date();
-         console.log(":::: bartenderFormData :: ",bartenderFormData);
-         const myPermis = {id:newId, userId:mainUserUid, barId: bartenderFormData.uid, grantedBy: bartenderFormData.ownerUid, grantedAt: currentDate, isMainBar: true  }
-         console.log(":::: myPermis  :: ",myPermis);
+        myPermis = {id:newId, userId:mainUserUid, barId: bartenderFormData.uid, grantedBy: bartenderFormData.ownerUid, grantedAt: currentDate, isMainBar: true  }
+        await setPermissions(myPermis);
         
-        // Check if this bar-user permission already exists
-        if(myPermis.id && myPermis.barId){
-           try{
-            const allPermissions = await getAllObjectStoreDataExec('BarUserPermissions');
-            if(allPermissions){
-                const allFalse = setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false});
-                if(!allFalse){setNotification({
-               type: 'Error',
-               messages: ["All false not set sccessfully"]
-           });}}}catch{}
-           console.log(":::: newUserPermisson :: ",myPermis);
-           const checker = await checkBeforeCRUDExec('BarUserPermissions', myPermis);
-           console.log(":::: checker  :: ",checker);
-           let result = null;
-           if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); }
-           else{ 
-            const recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [myPermis.userId,myPermis.barId]);
-            myPermis.id=recordToChange[0].id;
-
-            console.log("::: recordToChange :::  ", recordToChange);
-            console.log(":::  myPermis :::  ",  myPermis);
-            if(myPermis.id){
-            result= updateObjectStoreExec('BarUserPermissions', myPermis.id, myPermis);}
-            else{setNotification({
-                type: 'error',
-                messages: ["Error handling bar association"]
-            });}
-        }
-           if(result){setNotification({type: 'success', messages: ["Vous avez associez le bar avec succès"]});}
-        }
-    } catch (error) {
-        console.error("Error handling bar association:", error);
-        setNotification({
-            type: 'error',
-            messages: [error]
-        });
-    }
+    } catch (error) {setNotification({ type: 'error',messages: [error]});}
 };
 
+const setPermissions = async(myPermis)=>{
+   let recordToChange=null;
+   let allPermissions =null;
+   let isNewPermission = null;
+   let noPermission = null;
+   let allFalse = null;
+   let checker = null;
+   let recordExists = null;
+   let result = null;
 
+   if(myPermis.id && myPermis.barId){ 
+   //checking what to do
+    try{
+        recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [myPermis.userId,myPermis.barId]);
+        allPermissions = await getAllObjectStoreDataExec('BarUserPermissions');
+    }catch{}
+    if(allPermissions){
+        noPermission=false;
+        // Check if recordToChange is in allPermissions
+        recordExists = allPermissions.some(permission =>permission.userId === recordToChange.userId && permission.barId === recordToChange.barId);
+        if(recordExists){isNewPermission=false;}
+        else{isNewPermission=true;}
+    } 
+    else{ noPermission=true;} 
+
+
+    const insertNewPermission = async()=>{
+        checker = await checkBeforeCRUDExec('BarUserPermissions', myPermis);
+        if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); }
+        else{setNotification({ type: 'error',messages: checker.slice(1)});}
+    }
+
+    
+    //no permissions yet
+    if(noPermission===true){ await insertNewPermission();}
+    else{
+        allFalse = setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false});
+        //permissions exist but this is a new one
+        if(isNewPermission===true){
+        if(!allFalse){setNotification({type: 'Error', messages: ["All false not set successfully"]})}
+        else{await insertNewPermission();}
+        }
+        else{            
+        //update an existing permission
+        myPermis.id=recordToChange[0].id;
+        if(myPermis.id){result= updateObjectStoreExec('BarUserPermissions', myPermis.id, myPermis);}
+        else{setNotification({ type: 'error', messages: ["Error handling bar association"]});}
+        }
+    }  }
+    else{setNotification({ type: 'error', messages: ["Data Error handling bar association"]});}
+     
+}
 
 const [bartenderFormData, setBartenderFormData] = useState({
     selectedBar: null,      // For storing selected bar ID
