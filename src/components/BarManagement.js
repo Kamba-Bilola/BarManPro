@@ -108,41 +108,44 @@ const [newUserPermission, setNewUserPermission] = useState({
         setNewLocation({ ...newLocation, [name]: value });
     };
 
-    const buildPermissionData= async () =>{
-        // Get the last ID and set the new ID accordingly for BarUserPermissions
-        const lastId = await getLastIdAndSet("BarUserPermissions");
-        const newId = lastId !== null && lastId !== undefined ? lastId : 1;
-
-        // Load the main user UID and set permission details
-        const mainUserUid = await loadingMainUserUid();
-        const currentDate = new Date();
-        myPermis = {id:newId, userId:mainUserUid, barId: bartenderFormData.uid, grantedBy: bartenderFormData.ownerUid, grantedAt: currentDate, isMainBar: true  }
-    }
+   
     const handleSaveBar = async () => {
         if (editIndex !== null) {
-            await updateObjectStoreExec('Bars', newBar.id, newBar);
-            const updatedBar = newBar;
-            const updatedBars = [...bars];
-            updatedBars[editIndex] = updatedBar;
-            const mainUserUid = await loadingMainUserUid();
-            const recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [mainUserUid,updatedBar.id]);
-            const updateIsMainBar= recordToChange[0].isMainBar;
-            
-            if(updateIsMainBar!==isMainBar)
-            {
-                if(isMainBar===true){
-                await setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false});           
-                //update an existing permission
-                const myUpdatedPermId=recordToChange[0].id;
-                if(myUpdatedPermId){await setFieldValues('BarUserPermissions','id',myUpdatedPermId,{ isMainBar: true}); }
-                else{setNotification({ type: 'error', messages: ["Error handling bar association"]});}
+            // Edit existing bar
+            try {
+                console.log(":::newBar ", newBar);
+                await updateObjectStoreExec('Bars', newBar.id, newBar);
+    
+                const updatedBar = newBar;
+                const updatedBars = [...bars];
+                updatedBars[editIndex] = updatedBar;
+                setBars(updatedBars)}catch (error) {
+                    console.error('Error updating bar:', error);
+                    setNotification({ type: 'error', messages: ["Failed to update bar", error.message] });
+                } 
+                
+                // Load the main user UID and set permission details
+                const mainUserUid = await loadingMainUserUid();
+                const currentDate = new Date();
+                let recordToChange = null;
+                let myPermis = null;
+                try{
                     
-                }
-            }
-            
-            return;
-            //setBars(updatedBars);
+                     recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [mainUserUid,newBar.uid]);
+                     console.log("::::::: recordToChange ",recordToChange);
+                     if(recordToChange){
+                        myPermis = {id:recordToChange[0].id, userId:mainUserUid, barId: newBar.uid, grantedBy: newBar.ownerUid, grantedAt: currentDate, isMainBar: isMainBar }
+                        console.log("::::::: myPermis ",myPermis);
+                        await setPermissions(myPermis);
+
+                     }
+                     else{setNotification({ type: 'error', messages: ["Failed to update bar"] });
+                    }                    
+                }catch{setNotification({ type: 'error', messages: ["Failed to update bar", error.message] });}
+                
+                     
         } else {
+            // Add new bar
             try {
                 const lastId = await getLastIdAndSet("Bars");
                 const newId = lastId !== null && lastId !== undefined ? lastId : 1;
@@ -442,6 +445,11 @@ const handleAssociateBar = async (e) => {
         
     } catch (error) {setNotification({ type: 'error',messages: [error]});}
 };
+const insertNewPermission = async(myPermis,checker,result)=>{
+    checker = await checkBeforeCRUDExec('BarUserPermissions', myPermis);
+    if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); }
+    else{setNotification({ type: 'error',messages: checker.slice(1)});}
+}
 
 const setPermissions = async(myPermis)=>{
    let recordToChange=null;
@@ -452,38 +460,34 @@ const setPermissions = async(myPermis)=>{
    let checker = null;
    let recordExists = null;
    let result = null;
-
+   let isUpdate =null; 
    if(myPermis.id && myPermis.barId){ 
+    
    //checking what to do
     try{
         recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [myPermis.userId,myPermis.barId]);
         allPermissions = await getAllObjectStoreDataExec('BarUserPermissions');
+        if(myPermis.id===recordToChange[0].id){isUpdate=true;}
+        else{isUpdate=false;}
     }catch{}
     if(allPermissions){
         noPermission=false;
-        // Check if recordToChange is in allPermissions
-        recordExists = allPermissions.some(permission =>permission.userId === recordToChange.userId && permission.barId === recordToChange.barId);
-        if(recordExists){isNewPermission=false;}
+        if(isUpdate===true){isNewPermission=false;}
         else{isNewPermission=true;}
     } 
     else{ noPermission=true;} 
 
 
-    const insertNewPermission = async()=>{
-        checker = await checkBeforeCRUDExec('BarUserPermissions', myPermis);
-        if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); }
-        else{setNotification({ type: 'error',messages: checker.slice(1)});}
-    }
-
+   
     
     //no permissions yet
-    if(noPermission===true){ await insertNewPermission();}
+    if(noPermission===true){ await insertNewPermission(myPermis,checker,result);}
     else{
         allFalse = setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false});
         //permissions exist but this is a new one
         if(isNewPermission===true){
         if(!allFalse){setNotification({type: 'Error', messages: ["All false not set successfully"]})}
-        else{await insertNewPermission();}
+        else{await insertNewPermission(myPermis,checker,result);}
         }
         else{            
         //update an existing permission
@@ -545,7 +549,7 @@ const handleEditBar = (index) => {
     const barToUpdate = bars[index];
     setEditIndex(index);
     setNewBar(barToUpdate);
-    setNewBar({ ...newBar, id: barToUpdate.id,location: barToUpdate.location, name: barToUpdate.name, numberOfTables: barToUpdate.numberOfTables}); // Pre-fill bar location with the full address
+    setNewBar({ ...newBar, id: barToUpdate.id,uid: barToUpdate.uid,location: barToUpdate.location, name: barToUpdate.name, numberOfTables: barToUpdate.numberOfTables}); // Pre-fill bar location with the full address
     setIsBarForm(true);
     setShowModal(true);
 };

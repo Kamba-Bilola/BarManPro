@@ -42,13 +42,13 @@ const BarOwner = ({
     // Modify handleSaveBar to force update
     const handleSaveBarWithUpdate = () => {
         handleSaveBar(); // Call the original handleSaveBar function
-       /* setUpdateTrigger(prev => !prev); // Toggle the updateTrigger state to force re-render
+        setUpdateTrigger(prev => !prev); // Toggle the updateTrigger state to force re-render
         if(notification && notification.length > 0){
         if((notification.type=='success') || (notification.type=='error')){
             setShowMessage(true);
             
         }
-        else{setShowMessage(null);}}*/
+        else{setShowMessage(null);}}
 
     };
     return (
