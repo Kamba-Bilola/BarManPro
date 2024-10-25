@@ -1,18 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import './index.scss';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-
+import { GlobalStateProvider } from './states/GlobalStateContext';
 // Create a root element
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 // Render the app within the Redux Provider
 root.render(
-    <App />
+        <GlobalStateProvider>
+    <App /></GlobalStateProvider>
 );
 
 // If you want your app to work offline and load faster, you can change

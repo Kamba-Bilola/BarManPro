@@ -9,18 +9,28 @@ body {
  
  
   overflow-x: hidden;
-  background-color: aliceblue;
-  border: 1px solid #eee;
+  background-color: #fff;
+ 
   
 }
 #root {
   margin: 0 auto;
   overflow-x: hidden;
-  background-color: #fefefe;
+  background-color: #fff;
 }
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.config-wrapp{background-color: #02499b; text-align: center; color: #fff;
+img { max-width: 30%;  margin-top: 5px;}
+h1{font-size: 2em;} 
+.inline-container {
+  display: flex;
+  align-items: center;
+}
+.doJlBZ { display: flex; align-items: center; justify-content: space-around;}
 }
 
 
