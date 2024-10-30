@@ -9,8 +9,9 @@ import Configuration from "./views/pages/Configuration";
 import Login from "./views/pages/Login";
 
 const App = () => {
-  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,userDetails, setUserDetails,userRole, setUserRole,userConnected, setUserConnected} = useGlobalState();
-  const user = userDetails?.mainUser;
+  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected} = useGlobalState();
+  
+  console.log(":::: ViewIndice ::",viewIndice);
     // Function to determine which page to show
     const renderPage = () => {
         switch (viewIndice) {
@@ -23,13 +24,14 @@ const App = () => {
       }
   useEffect(() => {
     const setMainView = async () => {
-      if(DBstate===true){setViewIndice(0)}
+      if(mainUser){setViewIndice(2)}
       else{
-       if(!userDetails){setViewIndice(1)}
-      else{setViewIndice(2)}
+      if(DBstate===true){ setViewIndice(1)}
+      else{ setViewIndice(0)}
       }
-    };
+      };
     setMainView();
+  
   }, [DBstate]); 
   return (
    
