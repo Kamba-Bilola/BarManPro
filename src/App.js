@@ -7,7 +7,9 @@ import { MutatingDots } from 'react-loader-spinner';
 import AppStatusDisplay from "./components/specific/AppStatusDisplay";
 import Configuration from "./views/pages/Configuration";
 import Login from "./views/pages/Login";
-
+import IncompleteProfile from "./views/pages/IncompleteProfile";
+import DevOpsControls from "./components/specific/DevOpsControls";
+import IndicationBar from "./components/specific/IndicationBar";
 const App = () => {
   const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected} = useGlobalState();
   
@@ -17,7 +19,7 @@ const App = () => {
         switch (viewIndice) {
           case 0: return <main><Configuration/></main>;
           case 1: return <main><Login/></main>;
-          case 2: return <main><p>Complete your profile please</p></main>;
+          case 2: return <main><IncompleteProfile/></main>;
           default:
             return <div>404 Page Introuvable</div>;
         }
@@ -35,7 +37,12 @@ const App = () => {
   }, [DBstate]); 
   return (
    
-       <div>{renderPage()}</div>
+       <div>
+      <div className="App">
+       <SimulationComponent /> 
+       <DevOpsControls/>
+       <IndicationBar/>
+        <div className="config-wrapp"> {renderPage()}</div></div></div>
     
   );
 };
