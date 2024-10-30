@@ -1,0 +1,68 @@
+import React, { useState, useEffect,useContext } from 'react';
+import { handleClearData,handleRemoveDatabase,handleAddToDatastoreObject,getAllObjectStoreDataExec, getWhereFieldEqualsExec,setFieldValues } from '../../controllers/databaseControllers/indexedDbCrud';
+import { useGlobalState } from '../../states/GlobalStateContext';
+
+
+
+// Move loadMainBarList outside the component
+const loadMainBarListExec = async(mainBarList, setMainBarList)=>{
+  const permissionData = await getAllObjectStoreDataExec('BarUserPermissions');
+        setMainBarList(permissionData);
+        loadMainBarList(mainBarList, setMainBarList);
+}
+const loadMainBarList = async (mainBarList, setMainBarList) => {
+  let barList = [];
+  const permissionData = await getAllObjectStoreDataExec('BarUserPermissions');
+  
+  if (permissionData) { 
+    for (const perm of permissionData) {
+      const barData = await getWhereFieldEqualsExec('Bars', ["uid"], [perm.barId]);
+      if (barData) barList.push(barData);
+    }
+  } else {
+    barList.push("0 bars");
+  }
+
+  if (JSON.stringify(barList) !== JSON.stringify(mainBarList)) {
+    setMainBarList(barList); // Only update if the data has changed
+  }
+
+  console.log("::::::::: mainBarList", mainBarList);
+};
+const DevOpsControls = ({ setRoute }) => {
+  const handleSyncClick = async () => {
+    window.location.reload();
+};
+const { mainBarList, setMainBarList } = useGlobalState();
+let barList = [];
+// Load bars from IndexedDB on component mount
+useEffect(() => {
+  loadMainBarList(mainBarList, setMainBarList);
+}, [mainBarList]);
+  return (
+    <div className="devops">
+      <a href="/" >Back Home</a>
+      <button onClick={handleClearData}>Clear All Data</button>
+      <button onClick={handleRemoveDatabase}>Remove Database</button>
+     
+
+{/* Add routing buttons */}
+
+<button onClick={() => { console.log('Route: User Management'); setRoute('user-management'); }}>Go to User Management</button>
+<button onClick={() => { console.log('Route: Bar Management'); setRoute('bar-management'); }}>Go to Bar Management</button>
+      <button onClick={() => { console.log('Route: Stock Management'); setRoute('stock-management'); }}>Go to Stock Management</button>
+      <button onClick={() => { console.log('Route: Sales Entry'); setRoute('sales-entry'); }}>Go to Sales Entry</button>
+      <button onClick={() => { console.log('Route: Unpaid Stock'); setRoute('unpaid-stock'); }}>Go to Unpaid Stock</button>
+      <button onClick={() => { console.log('Route: Reports'); setRoute('reports'); }}>Go to Reports</button>
+      <button onClick={() => { console.log('Route: Locations'); setRoute('locations'); }}>Go to Locations</button>
+      <button onClick={handleSyncClick} >Rafraichir</button>
+      
+    
+    </div>
+  );
+  
+};
+
+
+export { loadMainBarListExec };
+export default DevOpsControls;

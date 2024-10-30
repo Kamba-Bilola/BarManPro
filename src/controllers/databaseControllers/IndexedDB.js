@@ -1,6 +1,6 @@
-const DB_NAME = 'BAR_MAN_PRO_DB';
-const DB_VERSION = 1;
-let db;
+export const DB_NAME = 'BAR_MAN_PRO_DB';
+export const DB_VERSION = 1;
+export let db;
 
 // Function to check if the database exists
 export const checkIfDatabaseExists = () => {

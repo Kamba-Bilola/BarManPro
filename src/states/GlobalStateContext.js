@@ -11,13 +11,29 @@ export const GlobalStateProvider = ({ children }) => {
   const [mainView, setMainView] = useState("Dashboard");
 
   // Login States
-  const [userDetails, setUserDetails] = useState({});
-  const [userRole, setUserRole] = useState("user");
-  const [userConnected, setUserConnected] = useState(false);
+  const [manualLogIn, setManualLogIn] = useState(false);
+  const [mainUser, setMainUser] = useState({
+     uid:null,
+     displayName:null,
+     photoURL:null,
+     email:null,
+     createdAt:null,
+     lastLoginAt:null,
+     barControled : null,
+     fullName : null,
+     phone : null,
+     password : null,
+     role : null,
+     Subscription : null,
+     id:null,
+     isConnected: null,
+     sessionStatus:null
+  
+});
 
   // Bars States
-  const [mainBars, setMainBars] = useState([]);
-  const [bars, setBars] = useState([]);
+  const [mainBarList, setMainBarList] = useState([]);
+  const [barList, setBarList] = useState([]);
   const [barMans, setBarMans] = useState([]);
   const [paymentState, setPaymentState] = useState("pending");
   const [barStatus, setBarStatus] = useState("inactive");
@@ -36,10 +52,9 @@ export const GlobalStateProvider = ({ children }) => {
         DBstate, setDBstate, syncState, setSyncState, viewIndice, setViewIndice, mainView, setMainView,
 
         // Login states
-        userDetails, setUserDetails, userRole, setUserRole, userConnected, setUserConnected,
-
+        manualLogIn, setManualLogIn,mainUser, setMainUser,
         // Bars states
-        mainBars, setMainBars, bars, setBars, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,
+        mainBarList, setMainBarList, barList, setBarList, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,
 
         // Stock and Sales states
         stockData, setStockData, stockStatus, setStockStatus, sessionStatus, setSessionStatus, salesReport, setSalesReport, gapStatus, setGapStatus
