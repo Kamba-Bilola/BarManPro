@@ -17,7 +17,7 @@ const App = () => {
     // Function to determine which page to show
     const renderPage = () => {
         switch (viewIndice) {
-          case 0: return <main><Configuration/></main>;
+          case 0: return <main><Login/></main>;
           case 1: return <main><Login/></main>;
           case 2: return <main><IncompleteProfile/></main>;
           default:
@@ -26,7 +26,8 @@ const App = () => {
       }
   useEffect(() => {
     const setMainView = async () => {
-      if(mainUser){setViewIndice(2)}
+      console.log("::: mainUser  : ", mainUser)
+      if(mainUser && mainUser.uid){setViewIndice(2)}
       else{
       if(DBstate===true){ setViewIndice(1)}
       else{ setViewIndice(0)}
@@ -39,10 +40,13 @@ const App = () => {
    
        <div>
       <div className="App">
-       <SimulationComponent /> 
+      <SimulationComponent /> 
        <DevOpsControls/>
        <IndicationBar/>
-        <div className="config-wrapp"> {renderPage()}</div></div></div>
+        <div className="config-wrapp pb-4"> {renderPage()}</div>
+        <div className="footer p-1 pt-4 mb-4"><p>© BarManPro tous droits réservés</p></div>
+        </div>        
+        </div>
     
   );
 };

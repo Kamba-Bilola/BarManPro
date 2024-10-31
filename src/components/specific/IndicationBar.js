@@ -46,7 +46,7 @@ const handleShowUserDetails = () => {
 const handleCloseUserModal = () => {
   setShowUserModal(false);
 };
-if(!mainUser){}
+if(!mainUser.uid){}
 else{
   return (
     <div className="indication-bar container-fluid grid-container pt-2">   
@@ -55,7 +55,7 @@ else{
         <a href='/'><img src={svgLogo} alt="Bar Man Pro" /></a>
         </div>
         <div id="brand_name" className="border-box colspan5"><span>BAR_MAN_PRO</span>
-        <Button id="userDetails" onClick={handleShowUserDetails}><span>{mainUser?.displayName ? mainUser.displayName.split(' ').map(word => word[0]).join('') : " ? "}</span></Button></div>
+        <span id="userDetails" onClick={handleShowUserDetails}><span>{mainUser?.displayName ? mainUser.displayName.split(' ').map(word => word[0]).join('') : " ? "}</span></span></div>
         <div id="col3" ></div>
         {/* Menu Icon - Click to Toggle Menu */}
       <div id="menu_bars" className="border-box rowspan2">
@@ -89,13 +89,13 @@ else{
         <div id="date" className="border-box colspan4"><span className="ms-md-3 mb-2 mb-md-0">Capital: {startAmount} FCFA</span></div>
          {/* Conditionally Render Mobile Menu */}
       {isMenuVisible && (
-        <div className="mobile-menu col">
+        <div className={`mobile-menu  colspan8 ${isMenuVisible ? 'show' : ''}`}>
           {/* Your mobile menu content here */}
-          <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Profile</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Logout</a></li>
+          <ul className='colspan8'>
+            <li className='colspan8'><a href="#">Home</a></li>
+            <li className='colspan8'><a href="#">Profile</a></li>
+            <li className='colspan8'><a href="#">Settings</a></li>
+            <li className='colspan8'><a href="#">Logout</a></li>
           </ul>
         </div>
       )}

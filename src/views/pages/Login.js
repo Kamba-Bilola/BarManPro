@@ -7,10 +7,11 @@ import DevOpsControls from "../../components/specific/DevOpsControls";
 import IndicationBar from "../../components/specific/IndicationBar";
 import logo from '../../assets/svg/logo.svg';
 //import {handleFacebookLogin,handleLogout,handleGoogleLogin} from './login'
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,signInWithRedirect } from 'firebase/auth';
 import { handleAddToDatastoreObject,getObjectStoreDataExec, handleRemoveDatabase,handleClearData,createDatabase, appDefaultConfData, addToObjectStoreExec,checkIfDatabaseExists,clearAllDataExec, removeDatabaseExec, getLastIdAndSet } from "../../controllers/databaseControllers/indexedDbCrud";
 import { auth } from "../../controllers/databaseControllers/firebase";
 import { useGlobalState } from '../../states/GlobalStateContext';
+import welocomeImg from '../../assets/svg/welcome.webp';
 
 
 const Login = () => {
@@ -86,7 +87,8 @@ const addFirstSession = async (userData) => {
 
 
   try {
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithRedirect(auth, provider);
+    console.log("::: google login ", result);
     const user = result.user;    
     const userData = {
       uid: user.uid,
@@ -122,16 +124,14 @@ const addFirstSession = async (userData) => {
   return (
    
       <div className="App">
-        <SimulationComponent /> 
-        <DevOpsControls/>
-        <IndicationBar/>
-         <div className="config-wrapp">     
+         <div className="config-wrapp pt-4">     
             <div>
-            <div className="googeleLogin">
-        <button onClick={googleLogin}  style={{ padding: '8px 16px', margin: '20px', backgroundColor: '#4285F4', color: 'white' }}
-        >Log in with Google</button>
-      
-    
+            <div className="googeleLogin ">
+              <h4>Bienvenu sur BarManPro</h4>
+              <p className="p-1 pt-1"> Votre gestionaire de bar optimisée, simple et efficace!</p>
+              <img className="welcomeImg" src={welocomeImg} />
+        <button className="btn btn-primary big-middle" onClick={googleLogin}  
+        >Connectez-vous avec Google</button>
         </div>
             </div>
             <div className="logoblock">
