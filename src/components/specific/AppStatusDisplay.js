@@ -15,60 +15,52 @@ const AppStatusDisplay = () => {
       let hasLoggedInBefore = false;
       const getUserDetails = async () => {
         try {
-         
-        
-         
-        const loginSession = await getObjectStoreDataExec("Sessions", 1);
-        if (loginSession === null) {hasLoggedInBefore=false;}
-        else{hasLoggedInBefore=true;}
-        const mainUserUid = loginSession.userId;
-        const sessionStatus = loginSession.status;
-        const userDB = await getObjectStoreDataExec("Users", mainUserUid);
-        const connectStatus = navigator.onLine;
-        console.log("::::userDB :::", userDB);
-         console.log("uid",userDB.uid);
-         console.log("displayName",userDB.displayName);
-         console.log("photoURL",userDB.photoURL);
-         console.log("email",userDB.email);
-         console.log("createdAt",userDB.createdAt);
-         console.log("lastLoginAt",userDB.lastLoginAt);
-         console.log("barControled ", userDB.barControled);
-         console.log("fullName ", userDB.fullName);
-         console.log("phone ", userDB.phone);
-         console.log("role ", userDB.role);
-         console.log("Subscription ", userDB.Subscription);
-         console.log("id",userDB.id);
-         console.log("isConnected", connectStatus);
-         console.log("sessionStatus",sessionStatus);
-         setMainUser(prevMainUser => ({
-          ...prevMainUser,
-          uid: userDB.uid,
-          displayName: userDB.displayName,
-          photoURL: userDB.photoURL,
-          email: userDB.email,
-          createdAt: userDB.createdAt,
-          lastLoginAt: userDB.lastLoginAt,
-          barControled: userDB.barControled,
-          fullName: userDB.fullName,
-          phone: userDB.phone,
-          role: userDB.role,
-          Subscription: userDB.Subscription,
-          id: userDB.id,
-          isConnected: connectStatus,
-          sessionStatus: sessionStatus
-        }));
-        
-        /*setMainUser = {...mainUser,
-          uid:userDB.uid,displayName:userDB.displayName,photoURL:userDB.photoURL,email:userDB.email,createdAt:userDB.createdAt,lastLoginAt:userDB.lastLoginAt,barControled : userDB.barControled,fullName : userDB.fullName,phone : userDB.phone,role : userDB.role,Subscription : userDB.Subscription,id:userDB.id,isConnected: connectStatus,sessionStatus:sessionStatus};*/
-        
-         
+          const loginSession = await getObjectStoreDataExec("Sessions", 1);
+          if (!loginSession) {
+            hasLoggedInBefore = false;
+            return; // exit early if there's no session
+          } else {
+            hasLoggedInBefore = true;
+          }
+      
+          const mainUserUid = loginSession.userId;
+          const sessionStatus = loginSession.status;
+          const userDB = await getObjectStoreDataExec("Users", mainUserUid);
+      
+          const connectStatus = navigator.onLine;
+          
+          setMainUser({
+            uid: userDB.uid,
+            displayName: userDB.displayName,
+            photoURL: userDB.photoURL,
+            email: userDB.email,
+            createdAt: userDB.createdAt,
+            lastLoginAt: userDB.lastLoginAt,
+            barControled: userDB.barControled,
+            fullName: userDB.fullName,
+            phone: userDB.phone,
+            role: userDB.role,
+            Subscription: userDB.Subscription,
+            id: userDB.id,
+            isConnected: connectStatus,
+            sessionStatus: sessionStatus
+          });
+        } catch (error) {
+          console.error("Error fetching user details:", error);
         }
-        catch (error) {  }
       };
+      
   
       getUserDetails();
     }, [DBstate]); // Dependency array includes setDBstate
     
+
+    useEffect(() => {
+      if (mainUser) { }
+    }, [mainUser]);
+
+    
+
     useEffect(() => {
 
      

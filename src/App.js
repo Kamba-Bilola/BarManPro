@@ -17,25 +17,29 @@ const App = () => {
     // Function to determine which page to show
     const renderPage = () => {
         switch (viewIndice) {
-          case 0: return <main><Login/></main>;
+          case 0: return <main><Configuration/></main>;
           case 1: return <main><Login/></main>;
           case 2: return <main><IncompleteProfile/></main>;
+          case 3: return <main><p>Lets go</p></main>;
           default:
             return <div>404 Page Introuvable</div>;
         }
       }
   useEffect(() => {
     const setMainView = async () => {
-      console.log("::: mainUser  : ", mainUser)
-      if(mainUser && mainUser.uid){setViewIndice(2)}
+      if(mainUser && mainUser.uid && mainUser.phone && mainUser.password){setViewIndice(3)
+        console.log("::: mainUser", mainUser);
+      }
+      else {if(mainUser && mainUser.uid){setViewIndice(2)}
       else{
       if(DBstate===true){ setViewIndice(1)}
       else{ setViewIndice(0)}
       }
-      };
+      }};
     setMainView();
   
-  }, [DBstate]); 
+  }, [DBstate,mainUser]); 
+
   return (
    
        <div>

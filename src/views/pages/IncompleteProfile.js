@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { getObjectStoreDataExec,updateObjectStoreExec } from '../../controllers/databaseControllers/indexedDbCrud';
+import { useGlobalState } from "../../states/GlobalStateContext";
 
 const IncompleteProfile = () => {
+    const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser} = useGlobalState();
+    
     const [showModal, setShowModal] = useState(false);
     const [newUser, setNewUser] = useState({ fullName: '', role: '', email: '', phone: '', password: '', repeatPassword: '', Subscription: '' });
     const [editIndex, setEditIndex] = useState(null);
-    const [mainUser, setMainUser] = useState(null);
     const [sessionStatus, setSessionStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -72,8 +74,18 @@ const IncompleteProfile = () => {
                     Subscription: newUser.Subscription 
                 };
                 
-                await updateObjectStoreExec("Users", myMainUserUid, updatedUser);
-                console.log("User data updated successfully in IndexedDB.");
+                const result = await updateObjectStoreExec("Users", myMainUserUid, updatedUser);
+                if(result){
+                    setMainUser({
+                        ...mainUser, 
+                        fullName: newUser.fullName || mainUser.displayName, 
+                        role: newUser.role, 
+                        email: newUser.email || mainUser.email, 
+                        phone: newUser.phone, 
+                        password: newUser.password, 
+                        Subscription: newUser.Subscription 
+                      });
+                }
                 
                 // Update the Redux state to indicate the profile is complete
                // dispatch(setUserState("complete"));
@@ -88,16 +100,14 @@ const IncompleteProfile = () => {
             try {
                 // Get login session
                 const loginSession = await getObjectStoreDataExec("Sessions", 1);
-                console.log("loginSession : ", loginSession);
                 const mainUserUid = loginSession.userId;
                 myMainUserUid = mainUserUid;
                 const sessionStatus = loginSession.status;
-                console.log("User ID:", mainUserUid, "Session Status:", sessionStatus);
+                
 
                 // Get main user data
                 const mainUser = await getObjectStoreDataExec("Users", mainUserUid);
-                console.log("mainUser : ", mainUser);
-
+               
                 // Set states
                 setMainUser(mainUser);
                 setNewUser({
@@ -124,13 +134,14 @@ const IncompleteProfile = () => {
 
     return (
         <div className="container pt-4 pb-4">
-             <Form>
+            <h4>Completez votre Profile</h4>
+           <Form>
                 <Form.Group controlId="formName">
                     <Form.Label>Nom Complet</Form.Label>
                     <Form.Control
                         type="text"
                         name="fullName"
-                        value={newUser.fullName}
+                        value={newUser.fullName || ""}
                         onChange={handleInputChange}
                         required
                         isInvalid={!!formErrors.fullName}
@@ -152,14 +163,14 @@ const IncompleteProfile = () => {
                         isInvalid={!!formErrors.phone}
                     />
                     <Form.Control.Feedback type="invalid">
-                        {formErrors.phone}
+                        {formErrors.phone || ""}
                     </Form.Control.Feedback>
                 </Form.Group>
                 <Form.Group controlId="formRole" className="mt-3">
                     <Form.Label>Role</Form.Label>
                     <Form.Select
                         name="role"
-                        value={newUser.role}
+                        value={newUser.role || ""}
                         onChange={handleInputChange}
                         required
                         isInvalid={!!formErrors.role}
@@ -194,7 +205,7 @@ const IncompleteProfile = () => {
                     <Form.Control
                         type="email"
                         name="email"
-                        value={newUser.email}
+                        value={newUser.email || ""}
                         onChange={handleInputChange}
                         isInvalid={!!formErrors.email}
                     />
@@ -207,7 +218,7 @@ const IncompleteProfile = () => {
                     <Form.Control
                         type="password"
                         name="password"
-                        value={newUser.password}
+                        value={newUser.password || ""}
                         onChange={handleInputChange}
                         maxLength="4"
                         minLength="4"
@@ -239,7 +250,7 @@ const IncompleteProfile = () => {
 
                 <footer>
                     <Form.Group>
-                        <Button variant="primary" onClick={handleSaveUser}>{editIndex !== null ? 'Soumettre' : 'Soumettre'}</Button>
+                        <Button variant="primary"  className="big-middle" onClick={handleSaveUser}>{editIndex !== null ? 'Soumettre' : 'Soumettre'}</Button>
                     </Form.Group>
                 </footer>
             </Form>

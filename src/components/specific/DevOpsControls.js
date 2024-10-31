@@ -27,7 +27,6 @@ const loadMainBarList = async (mainBarList, setMainBarList) => {
     setMainBarList(barList); // Only update if the data has changed
   }
 
-  console.log("::::::::: mainBarList", mainBarList);
 };
 const DevOpsControls = ({ setRoute }) => {
   const handleSyncClick = async () => {

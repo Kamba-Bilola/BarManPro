@@ -22,6 +22,7 @@ const prevManualLogin = manualLogIn;
 
 useEffect(() => {
   const fetchUserData = async () => {
+    if (manualLogIn !== prevManualLogin) {}
       // Saving user after Google login
       const googleUser = auth.currentUser;
       if (googleUser) {
@@ -30,8 +31,7 @@ useEffect(() => {
         try {
           const currentUserData = await getObjectStoreDataExec("Users", userUid);
           if(currentUserData){ 
-            console.log("::: currentUserData :  ",currentUserData)
-            //setUserDetails(prevDetails => ({ ...prevDetails || {},  mainUser: currentUserData }));
+            setUserDetails(prevDetails => ({ ...prevDetails || {},  mainUser: currentUserData }));
           }
           
         } catch (error) {
@@ -44,7 +44,7 @@ useEffect(() => {
   // Call the async function
   fetchUserData();
 
-}, []);
+}, [manualLogIn]);
 
 const googleLogin = async () => {
   
@@ -71,7 +71,7 @@ const addFirstSession = async (userData) => {
     const nextId = await getLastIdAndSet('Sessions');
     console.log(`Next ID to use: ${nextId}`);
     // Await the datastore function to ensure it's completed
-    addToObjectStoreExec("Sessions", firstSessionData,nextId);
+    handleAddToDatastoreObject("Sessions", firstSessionData,nextId);
 
     // Return true if the operation succeeds
     console.log('First session set');
@@ -85,35 +85,37 @@ const addFirstSession = async (userData) => {
   }
 };
 
-try {
-  const result = await signInWithPopup(auth, provider);
-  const user = result.user;    
-  const userData = {
-    uid: user.uid,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
-    email: user.email,
-    createdAt:Date.now(),
-    lastLoginAt:user.metadata.lastLoginAt,
-    barControled: null,
-    lastLoginAt: user.metadata.lastLoginAt,
-    fullName: null,
-    phone: null,
-    password: null,
-    role: null,
-    Subscription: null
-  };
-  console.log('Google user:', userData);
-  console.log(`Login successful! Welcome, ${userData.displayName}`);
-  // Save user data to IndexedDB
-  handleAddToDatastoreObject("Users", userData, user.uid);
-  console.log("just here");
-  const firstSes = addFirstSession(userData);    
-  window.location.reload();
-} catch (error) {
-  return false;
-  console.log('Failed to log in with Google. Please try again.');
-}
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;    
+    const userData = {
+      uid: user.uid,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      email: user.email,
+      createdAt:Date.now(),
+      lastLoginAt:user.metadata.lastLoginAt,
+      barControled: null,
+      lastLoginAt: user.metadata.lastLoginAt,
+      fullName: null,
+      phone: null,
+      password: null,
+      role: null,
+      Subscription: null
+    };
+    console.log('Google user:', userData);
+    console.log(`Login successful! Welcome, ${userData.displayName}`);
+    // Save user data to IndexedDB
+    handleAddToDatastoreObject("Users", userData, user.uid);
+    console.log("just here");
+    const firstSes = addFirstSession(userData); 
+    setmanualLogIn(true);  
+    window.location.reload();
+  } catch (error) {
+    return false;
+    console.log('Failed to log in with Google. Please try again.');
+  }
   
 };
 
