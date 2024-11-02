@@ -10,8 +10,9 @@ import Login from "./views/pages/Login";
 import IncompleteProfile from "./views/pages/IncompleteProfile";
 import DevOpsControls from "./components/specific/DevOpsControls";
 import IndicationBar from "./components/specific/IndicationBar";
+import RoleChecker from "./views/pages/RoleChecker";
 const App = () => {
-  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected} = useGlobalState();
+  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected,userState, setUserState} = useGlobalState();
   
   console.log(":::: ViewIndice ::",viewIndice);
     // Function to determine which page to show
@@ -20,14 +21,16 @@ const App = () => {
           case 0: return <main><Configuration/></main>;
           case 1: return <main><Login/></main>;
           case 2: return <main><IncompleteProfile/></main>;
-          case 3: return <main><p>Lets go</p></main>;
+          case 3: return <main><RoleChecker/></main>;
           default:
             return <div>404 Page Introuvable</div>;
         }
       }
+     
   useEffect(() => {
+    
     const setMainView = async () => {
-      if(mainUser && mainUser.uid && mainUser.phone && mainUser.password){setViewIndice(3)
+      if( mainUser.phone && mainUser.password ){setViewIndice(3)
         console.log("::: mainUser", mainUser);
       }
       else {if(mainUser && mainUser.uid){setViewIndice(2)}
@@ -38,7 +41,7 @@ const App = () => {
       }};
     setMainView();
   
-  }, [DBstate,mainUser]); 
+  }, [DBstate,mainUser,userState]); 
 
   return (
    

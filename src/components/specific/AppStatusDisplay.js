@@ -5,7 +5,7 @@ import { getWhereFieldEqualsExec,getObjectStoreDataExec } from "../../controller
 
 const AppStatusDisplay = () => {
     const [notification, setNotification] = useState();
-    const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser} = useGlobalState();
+    const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userState, setUserState} = useGlobalState();
     const [appMessage, setAppMessage] = useState("");
     const dbExists = null;
     let mySyncStatus = null;
@@ -45,6 +45,7 @@ const AppStatusDisplay = () => {
             isConnected: connectStatus,
             sessionStatus: sessionStatus
           });
+          
         } catch (error) {
           console.error("Error fetching user details:", error);
         }
@@ -56,7 +57,7 @@ const AppStatusDisplay = () => {
     
 
     useEffect(() => {
-      if (mainUser) { }
+      if(mainUser && mainUser.uid && mainUser.phone && mainUser.password){setUserState("complete");}
     }, [mainUser]);
 
     

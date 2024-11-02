@@ -11,7 +11,7 @@ export const GlobalStateProvider = ({ children }) => {
   const [mainView, setMainView] = useState("Dashboard");
 
   // Login States
-  const [manualLogIn, setManualLogIn] = useState(false);
+  const [userState, setUserState] = useState("incomplete");
   const [mainUser, setMainUser] = useState({
      uid:null,
      displayName:null,
@@ -32,6 +32,7 @@ export const GlobalStateProvider = ({ children }) => {
 });
 
   // Bars States
+  const [mainBar,setMainBar] = useState([]);
   const [mainBarList, setMainBarList] = useState([]);
   const [barList, setBarList] = useState([]);
   const [barMans, setBarMans] = useState([]);
@@ -52,9 +53,9 @@ export const GlobalStateProvider = ({ children }) => {
         DBstate, setDBstate, syncState, setSyncState, viewIndice, setViewIndice, mainView, setMainView,
 
         // Login states
-        manualLogIn, setManualLogIn,mainUser, setMainUser,
+        userState, setUserState,mainUser, setMainUser,
         // Bars states
-        mainBarList, setMainBarList, barList, setBarList, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,
+        mainBar,setMainBar,mainBarList, setMainBarList, barList, setBarList, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,
 
         // Stock and Sales states
         stockData, setStockData, stockStatus, setStockStatus, sessionStatus, setSessionStatus, salesReport, setSalesReport, gapStatus, setGapStatus

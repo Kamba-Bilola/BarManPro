@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { getObjectStoreDataExec,updateObjectStoreExec } from '../../controllers/databaseControllers/indexedDbCrud';
 import { useGlobalState } from "../../states/GlobalStateContext";
+import { hashPassword,comparePassword, encodeBase64, decodeBase64 } from '../../controllers/utilitiesControllers/passwordUtils';
 
 const IncompleteProfile = () => {
-    const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser} = useGlobalState();
+    const {userState, setUserState,mainUser, setMainUser} = useGlobalState();
     
     const [showModal, setShowModal] = useState(false);
     const [newUser, setNewUser] = useState({ fullName: '', role: '', email: '', phone: '', password: '', repeatPassword: '', Subscription: '' });
@@ -58,19 +59,21 @@ const IncompleteProfile = () => {
     };
 
     const handleSaveUser = async () => {
+
         if (!validateForm()) {
             return;
         }
       
         try {
             if (mainUser) {
+                const hashedPassword = await hashPassword(newUser.password);
                 const updatedUser = { 
                     ...mainUser, 
                     fullName: newUser.fullName || mainUser.displayName, 
                     role: newUser.role, 
                     email: newUser.email || mainUser.email, 
                     phone: newUser.phone, 
-                    password: newUser.password, 
+                    password: hashedPassword, 
                     Subscription: newUser.Subscription 
                 };
                 
@@ -82,19 +85,20 @@ const IncompleteProfile = () => {
                         role: newUser.role, 
                         email: newUser.email || mainUser.email, 
                         phone: newUser.phone, 
-                        password: newUser.password, 
+                        password: hashedPassword, 
                         Subscription: newUser.Subscription 
                       });
+                      setUserState("complete");
                 }
-                
+                window.location.reload();
                 // Update the Redux state to indicate the profile is complete
-               // dispatch(setUserState("complete"));
+                
             }
         } catch (error) {
             console.error("Error updating user data in IndexedDB:", error);
         }
     };
-
+   
     useEffect(() => {
         const loadSessionUserData = async () => {
             try {

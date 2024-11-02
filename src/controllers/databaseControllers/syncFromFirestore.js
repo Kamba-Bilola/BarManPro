@@ -1,6 +1,8 @@
 import { myFirestoreDb } from './firebase';
 import { collection, getDocs, onSnapshot } from 'firebase/firestore';
-import { openDB } from './indexedDB';
+/*import { openDB } from './indexedDB';*/
+import { openDB } from "./IndexedDB";
+
 
 // Function to sync Firestore to IndexedDB in batches and efficiently
 async function syncDataWithFirestore() {
