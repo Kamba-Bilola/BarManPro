@@ -135,17 +135,17 @@ h1{font-size: 2em;}
 }
 /* Main button style */
 button.btn-primary {
-  background: #ea391f; /* Orange background */
+  background: #ea391f;
   border: 0;
   height: 100%;
-  font-size: 12px;
-  line-height: 1;
+  font-size: 1.1em;
+  line-height: 2;
   padding: 0;
   width: 100%;
-  color: #fff; /* White text */
-  position: relative; /* Position relative for the pseudo-element */
-  overflow: hidden; /* Ensure the glow does not overflow */
-  transition: color 0.3s ease; /* Smooth transition for text color */
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s ease;
 }
 
 /* Big middle button style */
@@ -160,6 +160,21 @@ button.btn-primary.big-middle {
   overflow: hidden; /* Ensure the glow does not overflow */
   transition: color 0.3s ease; /* Smooth transition for text color */
   animation: shake 1.2s infinite; /* Add shake animation */
+}
+
+.btn-secondary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #b3bab7;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #ea391f;
+  --bs-btn-focus-shadow-rgb: 130, 138, 145;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #1f6ba6;
+  --bs-btn-active-border-color: #51585e;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #6c757d;
+  --bs-btn-disabled-border-color: #6c757d;
 }
 
 /* Hover effect for big middle button */
@@ -286,3 +301,20 @@ form footer{ margin: 30px 0;}
   opacity: 1;
 }
 .footer{ text-align: center; color: #fff; background: #222431; border-top: 1px solid #fff;}
+.BarOwner{
+  table{
+    td{
+      Button{
+        &.iconEdit{ display: flex;}
+        &.iconTrash{display: flex;}
+      }
+      span{
+        &.barTitle{ font-weight: bold;}
+        color: #151d44;
+        
+        &.block{display: block; }
+        svg{ margin-left:5px; }
+      }
+    }
+  }
+}

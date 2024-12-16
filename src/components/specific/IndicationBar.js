@@ -6,11 +6,13 @@ import { Button, Form , Modal } from 'react-bootstrap';
 import svgLogo from '../../assets/svg/logo.svg';
 import menuImg from '../../assets/svg/menu_bars.svg';
 import { useGlobalState } from '../../states/GlobalStateContext';
+import { getUserDetails } from '../../controllers/databaseControllers/indexedDbCrud';
 
 const IndicationBar = () => {
   const dispatch = useDispatch();
   const { dayStarted, startDate, startAmount, currentAmount } = useSelector((state) => state.indication);
-  const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected} = useGlobalState();
+  const { DBstate, setDBstate, syncState,setSyncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected, mainBar,setMainBar, mainBarList,setMainBarList,barList, setBarList } = useGlobalState();
+
    // State for controlling the visibility of the user details modal
    const [showUserModal, setShowUserModal] = useState(false);
    
@@ -41,7 +43,8 @@ const handleShowUserDetails = () => {
   setShowUserModal(true);
   console.log(mainUser);
 };
-
+useEffect(() => {}, [barList]); 
+useEffect(() => {}, [mainBarList]); 
 // Function to hide the modal
 const handleCloseUserModal = () => {
   setShowUserModal(false);

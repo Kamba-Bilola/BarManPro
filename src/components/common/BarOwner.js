@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Modal, Form, Spinner } from 'react-bootstrap';
 import AlertNotification from '../specific/AlertNotification';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBeerMugEmpty, faCheck, faClose, faCoffee,faGlassCheers,faHourglassEmpty,faLocationDot,faPenToSquare, faTrash, faWallet } from '@fortawesome/free-solid-svg-icons'
 
 const BarOwner = ({
     barList,
@@ -70,37 +72,34 @@ const BarOwner = ({
 
             <div className="table-responsive">
                 <Table striped bordered hover size="sm" className="text-center">
-                    <thead className="table-primary">
+                    <thead >
                         <tr>
-                            <th>Nom</th>
-                            <th>Emplacement</th>
-                            <th>Statut</th>
-                            <th>Niveau d'abonnement</th>
-                            <th>Nombre de Tables</th>
+                            <th>Information sur le Bar</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {barList.map((bar, index) => (
                             <tr key={bar.id}>
-                                <td>{bar.name}</td>
-                                <td>{bar.location}</td>
-                                <td>{bar.status}</td>
-                                <td>{bar.subscriptionLevel}</td>
-                                <td>{bar.numberOfTables}</td>
+                                <td> <span className='block barTitle'>{bar.name}</span>
+                                <span  className='block'><FontAwesomeIcon icon={faLocationDot} /> {bar.location}</span>
+                                <span><FontAwesomeIcon icon={bar.status === 'active' ? faCheck : faClose}/> {bar.status}</span>
+                                <span><FontAwesomeIcon icon={faWallet} /> {bar.subscriptionLevel}</span>
+                                <span  className='block'><FontAwesomeIcon icon={faGlassCheers} />  {bar.numberOfTables} tables</span>
+                                </td>
                                 <td>
                                     <Button
                                         variant="warning"
                                         onClick={() => handleEditBar(index)}
-                                        className="me-2"
+                                        className="me-2 iconEdit"
                                     >
-                                        Modifier
+                                        <FontAwesomeIcon icon={faPenToSquare} />
                                     </Button>
-                                    <Button
+                                    <Button  className="iconTrash"
                                         variant="danger"
                                         onClick={() => handleDeleteBar(bar.id)}
                                     >
-                                        Supprimer
+                                        <FontAwesomeIcon icon={faTrash} />
                                     </Button>
                                 </td>
                             </tr>
@@ -137,6 +136,27 @@ const BarOwner = ({
                                             className="mb-3"
                                         />
                                     )}
+                                     <Form.Group>
+                        <Form.Label>Est-ce que c'est le bar principal?</Form.Label>
+                        <div>
+                            <Form.Check
+                                type="radio"
+                                label="Oui"
+                                name="isMainBar"
+                                value={"true"}
+                                checked={isMainBar === true}
+                                onChange={handleMainBarRadioChange}
+                            />
+                            <Form.Check
+                                type="radio"
+                                label="Non"
+                                name="isMainBar"
+                                value={"false"}
+                                checked={isMainBar === false}
+                                onChange={handleMainBarRadioChange}
+                            />
+                        </div>
+                    </Form.Group>
                                     <Form.Group controlId="bar.name">
                                         <Form.Label>Nom du Bar</Form.Label>
                                         <Form.Control

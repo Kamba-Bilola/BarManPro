@@ -12,7 +12,7 @@ async function syncDataWithFirestore() {
     // Sync each collection
     await syncFirestoreCollection(db, 'Bars');
     await syncFirestoreCollection(db, 'Users');
-    await syncFirestoreCollection(db, 'Stock');
+    //await syncFirestoreCollection(db, 'Stock');
 
     // Update sync table
     await updateSyncTable(db);

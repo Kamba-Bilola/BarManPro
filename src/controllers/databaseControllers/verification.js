@@ -255,8 +255,29 @@ async function checkUniqueCombination(schema, storeName, data) {
       { name: 'Status', unique: false, required: false, label: 'Status' }
       ],
       uniqueCombination: [{ 0: 'barId', 1: 'userId' }]
-    }
-  };
+    },
+
+     Products: {
+      keyPath: 'id',
+      autoIncrement: true,
+      indexes: [
+      {name:'name', unique: true,required: true, label: 'Nom du produit'},
+      {name:'category', unique: false,required: false, label: 'Category du produit'},
+     { name: 'barId', unique: false, required: true, label: 'Bar ID' }]  },
+
+     Variations: {
+      keyPath: 'id',
+      autoIncrement: true,
+      indexes: [
+        { name: 'productId', unique: false, required: true, label: 'Product ID (Link to Products)' },
+        { name: 'capacity', unique: false, required: false, label: 'Capacity (e.g., 500ml)' },
+        { name: 'packaging', unique: false, required: false, label: 'Type of Packaging (e.g., Glass, Can)' },
+        { name: 'flavor', unique: false, required: false, label: 'Flavor (e.g., Strawberry)' },
+        { name: 'price', unique: false, required: true, label: 'Price (e.g., 5.99)' },
+        { name: 'imageUrl', unique: false, required: false, label: 'Image URL or Path' }
+      ]
+    }}
+    
   
 
 // Main checkBeforeCRUD function

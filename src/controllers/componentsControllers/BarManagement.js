@@ -37,9 +37,29 @@ const [notification, setNotification] = useState();
 const [mainUser, setmainUser] = useState();
 let mainUserUid = null;
 
-useEffect(() => { const loadBars = async () => {const barList = await getAllObjectStoreDataExec('Bars'); setBarList(barList);};loadBars(); }, [barList, newBar]);
 
-useEffect(() => {const loadMainUserUid = async () => {const loginSession = await getObjectStoreDataExec('Sessions', 1);mainUserUid = loginSession.userId;setNewBar((prevState) => ({ ...prevState, ownerUid: mainUserUid }));};loadMainUserUid();}, []);
+
+    useEffect(() => {
+        const loadBars = async () => {
+          const fetchedBarList = await getAllObjectStoreDataExec('Bars');
+          if (JSON.stringify(fetchedBarList) !== JSON.stringify(barList)) {
+            setBarList(fetchedBarList);
+          }
+        };
+      
+        loadBars();
+      }, [barList]);
+
+      // Optional: Add a separate `useEffect` to log changes to `barList`
+
+
+useEffect(() => {const loadMainUserUid = async () => {const loginSession = await getObjectStoreDataExec('Sessions', 1);mainUserUid = loginSession.userId;setNewBar((prevState) => ({ ...prevState, ownerUid: mainUserUid }));};loadMainUserUid(); }, []);
+
+useEffect(() => {const loadMainBars= async () => {const fetchedMainBarList = await getAllObjectStoreDataExec('BarUserPermissions');  if (JSON.stringify(fetchedMainBarList) !== JSON.stringify(mainBarList)) {
+    setMainBarList(mainBarList);
+  }};
+
+loadMainBars();  }, []);
 
 const loadingMainUserUid = async () => {const loginSession = await getObjectStoreDataExec('Sessions', 1);mainUserUid = loginSession.userId;return mainUserUid;};
 
@@ -48,6 +68,7 @@ const handleInputChange = (e) => {const { name, value } = e.target;setNewBar({ .
 const handleLocationInputChange = (e) => {const { name, value } = e.target;setNewLocation({ ...newLocation, [name]: value });};
 
 const handleSaveBar = async () => {
+//edit bar
 if (editIndex !== null) {
 try {await updateObjectStoreExec('Bars', newBar.id, newBar);const updatedBars = [...barList];updatedBars[editIndex] = newBar;setBarList(updatedBars);} 
 catch (error) {console.error('Error updating bar:', error);setNotification({type: 'error',messages: ["Failed to update bar", error.message]});return;}
@@ -61,18 +82,24 @@ let myPermis = null;
 
 try {
 recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId", "barId"], [mainUserUid, newBar.uid]);
+
 if (recordToChange && recordToChange.length > 0) {
 // Update the permission details
 myPermis = {id: recordToChange[0].id,userId: mainUserUid,barId: newBar.uid,grantedBy: newBar.ownerUid,grantedAt: currentDate,isMainBar: isMainBar};
  // Update the permissions in the database
+
 await setPermissions(myPermis);
 setNotification({ type: 'success', messages: ["Bar and permissions updated successfully"] });} 
 else {
     // If no permission record is found
-setNotification({ type: 'error', messages: ["No permission record found for this user and bar"] });}} catch (error) { console.error('Error updating permissions:', error);setNotification({ type: 'error', messages: ["Failed to update permissions", error.message] });}} catch (error) {console.error('Error loading main user:', error);setNotification({ type: 'error', messages: ["Failed to load main user", error.message] });}}
-else {
-try { const lastId = await getLastIdAndSet("Bars"); const newId = lastId !== null && lastId !== undefined ? lastId : 1; const newUID = uuidv4(); const mainUserUid = await loadingMainUserUid();
+setNotification({ type: 'error', messages: ["No permission record found for this user and bar"] });}} catch (error) { console.error('Error updating permissions:', error);setNotification({ type: 'error', messages: ["Failed to update permissions", error.message] });}} catch (error) {console.error('Error loading main user:', error);
+setNotification({ type: 'error', messages: ["Failed to load main user", error.message] });}
+}
 
+//new bar
+else {
+   
+try { const lastId = await getLastIdAndSet("Bars"); const newId = lastId !== null && lastId !== undefined ? lastId : 1; const newUID = uuidv4(); const mainUserUid = await loadingMainUserUid();
  const barWithId = {...newBar,id: newId,uid: newUID,ownerUid: mainUserUid};
   const result = await checkBeforeCRUDExec('Bars', barWithId);
 if (result[0] === true) {
@@ -84,14 +111,16 @@ const barUid = barWithId.uid;
 const theMainUser = await getObjectStoreDataExec('Users', mainUserUid);
 if (!theMainUser) { setNotification({ type: 'error', messages: ["Owner not found in the database"]});return;}
 // Create full `newUserPermission` object
+
 const currentDate = new Date();
 const lastPermissionId = await getLastIdAndSet("BarUserPermissions");
 const newPermissionId = lastPermissionId !== null && lastPermissionId !== undefined ? lastPermissionId : 1;
 const newUserPermission = { id: newPermissionId, userId: ownerUid, barId: barUid,  grantedBy: ownerUid, grantedAt: currentDate, isMainBar: isMainBar };
 // Check for existing permissions
 const permissionCheckResult = await checkBeforeCRUDExec('BarUserPermissions', newUserPermission);
-if (permissionCheckResult[0] === true) { await setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false}); 
+if (permissionCheckResult[0] === true) { //const setRequestResult = await setFieldValues('BarUserPermissions','isMainBar',true,{ isMainBar: false}); 
 const permissionGranted = await addToObjectStoreExec('BarUserPermissions', newUserPermission, null);
+
 if (permissionGranted){setNotification({type: 'success',messages: ["Permission granted successfully"]});setShowModal(false);} 
 else {setNotification({type: 'error',messages: ["Failed to grant permission"]});setShowModal(false);}}
 else {setNotification({type: 'error',messages: permissionCheckResult.slice(1)});setShowModal(false);
@@ -192,10 +221,15 @@ await setPermissions(myPermis);} catch (error) {setNotification({ type: 'error',
 
 const insertNewPermission = async(myPermis,checker,result)=>{
 checker = await checkBeforeCRUDExec('BarUserPermissions', myPermis);
-if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); }
-else{setNotification({ type: 'error',messages: checker.slice(1)});}}
+if(checker[0]!==false){ result= await addToObjectStoreExec('BarUserPermissions', myPermis, null); 
+  window.location.reload();
+}
+else{setNotification({ type: 'error',messages: checker.slice(1)});}
+
+}
 
 const setPermissions = async(myPermis)=>{
+    
 let recordToChange=null;let allPermissions =null;let isNewPermission = null;let noPermission = null;let allFalse = null;let checker = null;let recordExists = null;let result = null;let isUpdate =null; 
 
 if(myPermis.id && myPermis.barId){     
@@ -203,12 +237,11 @@ if(myPermis.id && myPermis.barId){
 try{recordToChange = await getWhereFieldEqualsExec('BarUserPermissions', ["userId","barId"], [myPermis.userId,myPermis.barId]);
 allPermissions = await getAllObjectStoreDataExec('BarUserPermissions');
 setMainBarList(allPermissions);
-if(myPermis.id===recordToChange[0].id){isUpdate=true;}
+if(recordToChange[0].id){isUpdate=true;myPermis.id=recordToChange[0].id;}
 else{isUpdate=false;}}catch{}
 if(allPermissions){ 
 noPermission=false; if(isUpdate===true){isNewPermission=false;} else{isNewPermission=true;}} 
 else{ noPermission=true;} 
-
 //no permissions yet
 if(noPermission===true){ await insertNewPermission(myPermis,checker,result);}
 else{
@@ -221,7 +254,8 @@ else{await insertNewPermission(myPermis,checker,result);}
 else{
 //update an existing permission
 myPermis.id=recordToChange[0].id;
-if(myPermis.id){result= updateObjectStoreExec('BarUserPermissions', myPermis.id, myPermis);}
+if(myPermis.id){result= await updateObjectStoreExec('BarUserPermissions', myPermis.id, myPermis); 
+}
 else{setNotification({ type: 'error', messages: ["Error handling bar association"]});}}}}
 else{setNotification({ type: 'error', messages: ["Data Error handling bar association"]});} setShowModal(false);}
 
@@ -242,7 +276,7 @@ default: break;}};
 const handleEditBar = (index) => { const barToUpdate = barList[index]; setEditIndex(index); setNewBar(barToUpdate); setNewBar({ ...newBar, id: barToUpdate.id,uid: barToUpdate.uid,location: barToUpdate.location, name: barToUpdate.name, numberOfTables: barToUpdate.numberOfTables});  setIsBarForm(true); setShowModal(true);
 };
 
-const handleMainBarRadioChange = (e) => {  const value = e.target.value === 'true'; setIsMainBar(value); };
+const handleMainBarRadioChange = (e) => {  const value = e.target.value === 'true';  setIsMainBar(value);  };
 return (
         <div>
             {role === 'BarOwner' && (<BarOwner barList={barList} setBarList={setBarList} showModal={showModal} setShowModal={setShowModal} isBarForm={isBarForm} editIndex={editIndex} newBar={newBar} handleInputChange={handleInputChange} handleSaveBar={handleSaveBar} handleEditBar={handleEditBar} handleDeleteBar={handleDeleteBar} handleAddLocation={handleAddLocation} newLocation={newLocation} handleLocationInputChange={handleLocationInputChange} handleSaveLocation={handleSaveLocation} loadingLocation={loadingLocation} notification={notification} setNotification={setNotification} isMainBar={isMainBar} setIsMainBar={setIsMainBar} handleMainBarRadioChange={handleMainBarRadioChange}

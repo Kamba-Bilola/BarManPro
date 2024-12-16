@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AlertNotification from '../specific/AlertNotification';
 
+
 const BarTender = ({
     syncStatus,
     error,
@@ -27,7 +28,7 @@ const BarTender = ({
 
     return (
         <div>
-            <h3 className="text-center">Sélectionnez le Bar que vous souhaitez gérer</h3>
+            <h4 className='pb-3'>Sélectionnez le Bar que vous souhaitez gérer</h4>
              
             {/* Sync status and errors */}
             {syncStatus === 'loading' && (
@@ -45,10 +46,10 @@ const BarTender = ({
                 <>
                     <form onSubmit={handleAssociateBar}>
                         {showMessage && (<AlertNotification type={notification.type} messages={notification.messages} />)}
-                        
-                        <div className="row g-3 align-items-end">
-                            <div className="col-md-5">
-                                <label htmlFor="ownerPhone" className="form-label">Téléphone du propriétaire du Bar</label>
+                        <p className='form-label style={{ textAlign: "justify" }}'>Selectionnez un bar avant la validation du téléphone et du mot de passe du propriètaire</p>
+                        <div className="row g-3 d-flex text-start">
+                            <div className="col-md-6 flex-fill w-50">
+                                <label htmlFor="ownerPhone" className="form-label">Téléphone</label>
                                 <input
                                     type="text"
                                     className="form-control"
@@ -61,8 +62,8 @@ const BarTender = ({
                                 />
                             </div>
 
-                            <div className="col-md-5">
-                                <label htmlFor="ownerPassword" className="form-label">Mot de passe du propriétaire du Bar</label>
+                            <div className="col-md-6 flex-fill w-50">
+                                <label htmlFor="ownerPassword" className="form-label">Mot de passe</label>
                                 <input
                                     type="password"
                                     className="form-control"
@@ -73,9 +74,9 @@ const BarTender = ({
                                     placeholder="Entrer le mot de passe"
                                     required
                                 />
-                            </div>
-
-                            <div className="col-md-2 text-center">
+                            </div></div>
+                            <div className="row g-3 align-items-end">
+                            <div className="col-md-12 text-center w-100 pt-2">
                                 <button type="submit" className="btn btn-primary w-100 big-middle">Associez le Bar</button>
                             </div>
                         </div>
@@ -91,16 +92,7 @@ const BarTender = ({
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <select
-                                className="form-select"
-                                value={filterTables}
-                                onChange={(e) => setFilterTables(e.target.value)}
-                            >
-                                <option value="">Filtrer par nombre de tables</option>
-                                <option value="1-5">1-5 Tables</option>
-                                <option value="6-10">6-10 Tables</option>
-                                <option value="11+">11+ Tables</option>
-                            </select>
+                           
                         </div>
                     </div>
 
@@ -109,18 +101,15 @@ const BarTender = ({
                         <table className="table table-striped table-bordered">
                             <thead>
                                 <tr>
-                                    <th>Nom du Bar</th>
-                                    <th>Emplacement</th>
-                                    <th>Nombre de Tables</th>
+                                    <th>Informations du BAR</th>
                                     <th>Sélectionner</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredBars.map((bar) => (
                                     <tr key={bar.id}>
-                                        <td>{bar.name}</td>
-                                        <td>{bar.location}</td>
-                                        <td>{bar.numberOfTables}</td>
+                                        <td><span>{bar.name} </span>
+                                        <span>{bar.location} </span></td>
                                         <td>
                                             <input
                                                 type="radio"

@@ -11,10 +11,14 @@ import IncompleteProfile from "./views/pages/IncompleteProfile";
 import DevOpsControls from "./components/specific/DevOpsControls";
 import IndicationBar from "./components/specific/IndicationBar";
 import RoleChecker from "./views/pages/RoleChecker";
+import StockCheker from "./views/pages/StockCheker";
 const App = () => {
-  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected,userState, setUserState} = useGlobalState();
-  
-  console.log(":::: ViewIndice ::",viewIndice);
+  const { DBstate, setDBstate, syncState, viewIndice,setViewIndice, mainView,mainUser, setMainUser,userRole, setUserRole,userConnected, setUserConnected,userState, setUserState,barList,mainBarList} = useGlobalState();
+  const [routingMode, setRoutingMode] = useState(false); // Routing mode state
+  const [activeRoute, setActiveRoute] = useState(null);  // Active route state
+  // Initialize the route and setRoute using useState
+  const [route, setRoute] = useState(null);
+
     // Function to determine which page to show
     const renderPage = () => {
         switch (viewIndice) {
@@ -22,6 +26,7 @@ const App = () => {
           case 1: return <main><Login/></main>;
           case 2: return <main><IncompleteProfile/></main>;
           case 3: return <main><RoleChecker/></main>;
+          case 4: return <main><StockCheker/></main>;
           default:
             return <div>404 Page Introuvable</div>;
         }
@@ -29,9 +34,18 @@ const App = () => {
      
   useEffect(() => {
     
-    const setMainView = async () => {
-      if( mainUser.phone && mainUser.password ){setViewIndice(3)
-        console.log("::: mainUser", mainUser);
+    const setMainView = async () => { 
+
+    
+      
+      if( mainUser.phone && mainUser.password ){
+        setViewIndice(3);   
+        
+          if(mainUser.role=="Bartender"){            
+          if(mainBarList.length>0){ setViewIndice(4); } 
+          }
+          if(mainUser.role=="BarOwner"){ 
+            if(barList.length>0){ setViewIndice(4); } }
       }
       else {if(mainUser && mainUser.uid){setViewIndice(2)}
       else{
@@ -41,7 +55,7 @@ const App = () => {
       }};
     setMainView();
   
-  }, [DBstate,mainUser,userState]); 
+  }, [DBstate,mainUser,userState,barList]); 
 
   return (
    

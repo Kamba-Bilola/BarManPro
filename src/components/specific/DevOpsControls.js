@@ -28,7 +28,12 @@ const loadMainBarList = async (mainBarList, setMainBarList) => {
   }
 
 };
-const DevOpsControls = ({ setRoute }) => {
+const DevOpsControls = ({ }) => {
+
+  const [routingMode, setRoutingMode] = useState(false); // Routing mode state
+const [activeRoute, setActiveRoute] = useState(null);  // Active route state
+// Initialize the route and setRoute using useState
+const [route, setRoute] = useState(null);
   const handleSyncClick = async () => {
     window.location.reload();
 };

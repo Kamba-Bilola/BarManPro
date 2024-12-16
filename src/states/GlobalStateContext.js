@@ -41,8 +41,8 @@ export const GlobalStateProvider = ({ children }) => {
 
   // Stock and Sales States
   const [stockData, setStockData] = useState([]);
-  const [stockStatus, setStockStatus] = useState("fine");
-  const [sessionStatus, setSessionStatus] = useState("finished");
+  const [stockStatus, setStockStatus] = useState();
+  const [sessionStatus, setSessionStatus] = useState();
   const [salesReport, setSalesReport] = useState([]);
   const [gapStatus, setGapStatus] = useState("pending");
 

@@ -233,13 +233,25 @@ async function upgradeDatabase(event) {
             store.createIndex('Subscription', 'Subscription', { unique: false });
           }
       
-          // Create 'Stock' object store if it doesn't exist
-          if (!db.objectStoreNames.contains('Stock')) {
-            const store = db.createObjectStore('Stock', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('name', 'name', { unique: false });
-            store.createIndex('sizes', 'sizes', { unique: false });
-            store.createIndex('barId', 'barId', { unique: false });
+          // Create 'Products' object store if it doesn't exist
+          if (!db.objectStoreNames.contains('Products')) {
+            const productStore = db.createObjectStore('Products', { keyPath: 'id', autoIncrement: true });
+            productStore.createIndex('name', 'name', { unique: true });
+            productStore.createIndex('category', 'category', { unique: false });
+            productStore.createIndex('barId', 'barId', { unique: false });
           }
+
+          // Create 'Variations' object store if it doesn't exist
+          if (!db.objectStoreNames.contains('Variations')) {
+            const variationStore = db.createObjectStore('Variations', { keyPath: 'id', autoIncrement: true });
+            variationStore.createIndex('productId', 'productId', { unique: false }); // Link to Products
+            variationStore.createIndex('capacity', 'capacity', { unique: false }); // JSON attributes field
+            variationStore.createIndex('packaging', 'packaging', { unique: false });
+            variationStore.createIndex('flavor', 'flavor', { unique: false });
+            variationStore.createIndex('price', 'price', { unique: false });
+            variationStore.createIndex('imageUrl', 'imageUrl', { unique: false });
+          }
+
       
           // Create 'SalesReports' object store if it doesn't exist
           if (!db.objectStoreNames.contains('SalesReports')) {
