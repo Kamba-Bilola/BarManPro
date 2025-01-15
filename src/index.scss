@@ -318,3 +318,16 @@ form footer{ margin: 30px 0;}
     }
   }
 }
+
+.productBox{ position: relative;
+  .removeProduct {
+    position: absolute;
+    right: 0;
+    width: fit-content;
+    padding: 0px 10px 30px 10px;
+    border-radius: 5px;
+    font-size: 1rem;
+    background: #ea391f;
+}
+.removeProduct:hover {background: red;}
+  }

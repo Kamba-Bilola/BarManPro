@@ -250,6 +250,7 @@ async function upgradeDatabase(event) {
             variationStore.createIndex('flavor', 'flavor', { unique: false });
             variationStore.createIndex('price', 'price', { unique: false });
             variationStore.createIndex('imageUrl', 'imageUrl', { unique: false });
+            variationStore.createIndex('isDefault', 'isDefault', { unique: false });
           }
 
       

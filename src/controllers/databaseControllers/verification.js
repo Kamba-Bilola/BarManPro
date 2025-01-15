@@ -274,7 +274,8 @@ async function checkUniqueCombination(schema, storeName, data) {
         { name: 'packaging', unique: false, required: false, label: 'Type of Packaging (e.g., Glass, Can)' },
         { name: 'flavor', unique: false, required: false, label: 'Flavor (e.g., Strawberry)' },
         { name: 'price', unique: false, required: true, label: 'Price (e.g., 5.99)' },
-        { name: 'imageUrl', unique: false, required: false, label: 'Image URL or Path' }
+        { name: 'imageUrl', unique: false, required: false, label: 'Image URL or Path' },
+        { name: 'isDefault', unique: false, required: false, label: 'Default Variation' }
       ]
     }}
     

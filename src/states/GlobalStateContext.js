@@ -33,6 +33,7 @@ export const GlobalStateProvider = ({ children }) => {
 
   // Bars States
   const [mainBar,setMainBar] = useState([]);
+  const [defaultBar,setDefaultBar] = useState([]);
   const [mainBarList, setMainBarList] = useState([]);
   const [barList, setBarList] = useState([]);
   const [barMans, setBarMans] = useState([]);
@@ -55,8 +56,7 @@ export const GlobalStateProvider = ({ children }) => {
         // Login states
         userState, setUserState,mainUser, setMainUser,
         // Bars states
-        mainBar,setMainBar,mainBarList, setMainBarList, barList, setBarList, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,
-
+        mainBar,setMainBar,mainBarList, setMainBarList, barList, setBarList, barMans, setBarMans, paymentState, setPaymentState, barStatus, setBarStatus,defaultBar,setDefaultBar,
         // Stock and Sales states
         stockData, setStockData, stockStatus, setStockStatus, sessionStatus, setSessionStatus, salesReport, setSalesReport, gapStatus, setGapStatus
       }}

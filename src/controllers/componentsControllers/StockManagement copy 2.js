@@ -65,7 +65,6 @@ const StockManagement = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    console.log("---file :  ", file);
     setProduct({ ...product, image: file });
   };
 
@@ -168,24 +167,7 @@ const StockManagement = () => {
     }
   }
   }
-  const base64ToFile = (base64String, filename) => {
-    const byteString = atob(base64String.split(',')[1]);
-    const mimeType = base64String.split(',')[0].match(/:(.*?);/)[1];
-    const byteNumbers = new Array(byteString.length);
-
-    for (let i = 0; i < byteString.length; i++) {
-        byteNumbers[i] = byteString.charCodeAt(i);
-    }
-
-    const byteArray = new Uint8Array(byteNumbers);
-    const file = new File([byteArray], filename, { type: mimeType });
-
-    // Set the image as the product image
-    setProduct((prevProduct) => ({
-        ...prevProduct,
-        image: file,
-    }));
-};
+  
   
 
 
@@ -372,20 +354,7 @@ const StockManagement = () => {
   };
   
 
-  const startCamera = (target,t) => {
-    const imageHolders = document.querySelectorAll('.imageHoder');
-  const parentElement = t.target.closest('.imageHoder');
-
-  // Hide all image holders
-  imageHolders.forEach((holder) => {
-    holder.style.display = 'none';
-  });
-
-  // Show the clicked parent element
-  if (parentElement) {
-    parentElement.style.display = 'flex';
-  }
-
+  const startCamera = (target) => {
     setIsCameraOpen((prev) => ({ open: true, target })); // Save the target (null for product, index for variant)
     navigator.mediaDevices
       .getUserMedia({ video: true })
@@ -400,10 +369,6 @@ const StockManagement = () => {
         console.error("Error accessing camera: ", err);
       });
   };
-  const imageToField = (capturedImage,t) => {
-    console.log("-----captured image",capturedImage);
-    base64ToFile(capturedImage, "image.png");
-  }
   const capturePhoto = () => {
     // Check if videoRef.current is defined
     if (!videoRef.current) {
@@ -680,7 +645,7 @@ const StockManagement = () => {
 
 
         {/* Image */}
-        <div className="mb-3 d-block imageHoder" style={{ display: "block" }}  >
+        <div className="mb-3">
           <label className="form-label">Image du produit</label>
           <div className="d-flex">
             <input
@@ -692,7 +657,7 @@ const StockManagement = () => {
             { <button
               type="button"
               className="btn btn-secondary"
-              onClick={(t) => startCamera(null,t)}
+              onClick={() => startCamera(null)}
             >
               <img src={cameraSvg} alt="Utiliser la caméra"  width={25}/>
             </button>}
@@ -709,7 +674,7 @@ const StockManagement = () => {
               <button
                 type="button"
                 className="btn btn-success me-2"
-                onClick={(t) => imageToField(capturedImage,t)}
+                onClick={capturePhoto}
               >
                 Valider la photo
               </button>
@@ -726,7 +691,7 @@ const StockManagement = () => {
             
             
           ) }
-      
+        </div>
 
         {isCameraOpen.open && (
           <div className="mt-3">
@@ -750,7 +715,7 @@ const StockManagement = () => {
             <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
           </div>
         )}
-  </div>
+
         
         {/* Attributs par défaut */}
         <h5>Attributs par défaut du produit</h5>
@@ -901,7 +866,7 @@ const StockManagement = () => {
             { <button
               type="button"
               className="btn btn-secondary"
-              onClick={(t) => startCamera(null, t)}
+              onClick={() => startCamera(null)}
             >
               <img src={cameraSvg} alt="Utiliser la caméra"  width={25}/>
             </button>}
