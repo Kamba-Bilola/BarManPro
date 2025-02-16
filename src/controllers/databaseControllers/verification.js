@@ -19,8 +19,9 @@ function validateRequiredFields(schema, storeName, data) {
   }
 
   if (missingFields.length > 0) {
-    const error = new Error(`Required fields are missing in ${storeName}`);
+    const error = new Error(`Required fields are missing in ${storeName} `);
     error.labels = missingFields;
+    console.log(error.labels);
     throw error;
   }
 }
@@ -128,7 +129,6 @@ async function checkUniqueCombination(schema, storeName, data) {
         { name: 'userId', unique: false, required: true, label: 'ID de l\'utilisateur' },
         { name: 'checkType', unique: false, required: true, label: 'Type de vérification' },
         { name: 'checkTime', unique: false, required: true, label: 'Heure de vérification' },
-        { name: 'stockLevels', unique: false, required: false, label: 'Niveaux de stock' },
         { name: 'notes', unique: false, required: false, label: 'Notes' }
       ]
     },

@@ -14,10 +14,14 @@ const StockManagement = () => {
   let myImageUrl = null;
   const [progress, setProgress] = useState({started:false,pc:0});
   const [msg, setMsg] = useState(null);
+  const [forceRender, setForceRender] = useState(0);
   let myMainBar = null;
   let  barId = null;
   const { mainUser,barList,mainBarList, mainBar, setMainBar,defaultBar,setDefaultBar } = useGlobalState();
   const [showForm, setShowForm] = useState(false);
+  const [activeInventory,setActiveInventory] = useState(false);
+  const [inventory, setInventory] = useState({});
+  const [validatedPhoto, setValidatedPhoto] = useState(false);
   const [product, setProduct] = useState({
     name: "",
     category: "",
@@ -47,9 +51,10 @@ const StockManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [isCameraOpen, setIsCameraOpen] =  useState({ open: false, target: null });
   const [capturedImage, setCapturedImage] = useState(null);
+  const [currentVariants, setCurrentVariants] = useState({});
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-
+  const [quantities, setQuantities] = useState({});
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProduct({ ...product, [name]: value });
@@ -78,7 +83,14 @@ const StockManagement = () => {
       ],
     });
   };
+  const fileInputRef = useRef(null);
 
+  // Trigger file input when image is clicked
+  const handleImageClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
   const handleVariantChange = (index, e) => {
     const { name, value } = e.target;
     const updatedVariants = product.variants.map((variant, idx) =>
@@ -125,6 +137,8 @@ const StockManagement = () => {
   if (prodcutCanBeInserted[0] === true) {
   try {
     await addToObjectStoreExec('Products', dBProduct, null);
+    await loadProducts();
+    setShowForm(false);
   }
   catch (error) {console.error("Product can not  be inserted:", error);}
    
@@ -139,6 +153,8 @@ const StockManagement = () => {
   if (dfVariationCanBeInserted[0] === true) {
     try {
       await addToObjectStoreExec('Variations', dBDefaultVariation, null);
+      await loadProducts();
+      setShowForm(false);
       
     }
     catch (error) {console.error("Default variation can not  be inserted:", error);}
@@ -159,6 +175,8 @@ const StockManagement = () => {
       if (dfVariationCanBeInserted[0] === true) {
     try {
       await addToObjectStoreExec('Variations', dBVariation, null);
+      await loadProducts();
+      setShowForm(false);
     }
     catch (error) {console.error("Variation can not  be inserted:", error);}
      
@@ -185,6 +203,7 @@ const StockManagement = () => {
         ...prevProduct,
         image: file,
     }));
+    setValidatedPhoto(true);
 };
   
 
@@ -325,6 +344,29 @@ const StockManagement = () => {
   useEffect(() => {
     // Log the updated productList whenever it changes
   }, [productList]); // Dependency array ensures this runs when productList updates
+
+  useEffect(() => {}, [activeInventory]); 
+ 
+
+  const editVariantImage = async (e,objectStoreName, fieldName, constraints) => {
+    alert(e.target.id);
+    console.log("----constraints", constraints);
+    const file = e.target.files[0];
+    if(file){let imageFile = await uploadFile(file);myImageUrl = imageFile.fileUrl;
+      if(myImageUrl){
+        const myresults = await setFieldValues(objectStoreName,'id',constraints.id ,  {
+          [fieldName]: myImageUrl // Update the specified field with new value
+        });
+        if(myresults){ await loadProducts();}
+    
+      }
+    }
+      else{myImageUrl =null;}  
+
+     
+
+  }
+
   
   const loadProducts = async () => {
     try {
@@ -344,27 +386,43 @@ const StockManagement = () => {
   const [currentVariantIndex, setCurrentVariantIndex] = useState({});
 
   // Function to handle navigation through variations
-  const handleVariantSlideChange = (productId, totalVariants, direction) => {
-    setCurrentVariantIndex((prevState) => {
-      const currentIndex = prevState[productId] || 0;
-      const newIndex =
-        direction === 'next'
-          ? (currentIndex + 1) % totalVariants
-          : (currentIndex - 1 + totalVariants) % totalVariants;
-  
-      console.log(`Updated variant index for product ${productId}:`, newIndex); // Debug log
-      return { ...prevState, [productId]: newIndex };
-    });
-  };
-  
+
+const handleVariantSlideChange = (productId, totalVariants, direction) => {
+  setCurrentVariantIndex((prevState) => {
+    const currentIndex = prevState[productId] || 0;
+    const newIndex =
+      direction === 'next'
+        ? (currentIndex + 1) % totalVariants
+        : (currentIndex - 1 + totalVariants) % totalVariants;
+
+    console.log(`Updated variant index for product ${productId}:`, newIndex);
+
+    // Find the new variant and store it explicitly
+    const updatedVariant = productList.find((entry) => entry.product.id === productId)
+      ?.variations[newIndex];
+
+    setCurrentVariants((prev) => ({
+      ...prev,
+      [productId]: updatedVariant
+    }));
+    // Force a re-render
+    setForceRender((prev) => prev + 1);
+
+    return { ...prevState, [productId]: newIndex };
+  });
+};
+
   
   const handleEdit = async (objectStoreName, fieldName, newValue, constraints) => {
+    const constraintKey= Object.keys(constraints)[0];
+    const constraintValue = constraints[constraintKey];
+    console.log("handle editing .... " , objectStoreName, fieldName, newValue,constraintKey,constraintValue  );
     try {  
-      // Assuming `constraints` includes a field and value for filtering
-      const myresults = await setFieldValues(objectStoreName, constraints.field, constraints.value, {
-        [fieldName]: newValue, // Update the specified field with new value
+      // Pass `constraints` separately and only send `newValue` as part of `updates`
+      const myresults = await setFieldValues(objectStoreName, constraintKey,constraintValue, {
+        [fieldName]: newValue // Fix: Properly structure the updates
       });
-  
+      await loadProducts();
       console.log("-----editing-------", myresults);
     } catch (error) {
       console.error("Error during editing:", error);
@@ -373,6 +431,7 @@ const StockManagement = () => {
   
 
   const startCamera = (target,t) => {
+    setValidatedPhoto(false);
     const imageHolders = document.querySelectorAll('.imageHoder');
   const parentElement = t.target.closest('.imageHoder');
 
@@ -403,6 +462,7 @@ const StockManagement = () => {
   const imageToField = (capturedImage,t) => {
     console.log("-----captured image",capturedImage);
     base64ToFile(capturedImage, "image.png");
+    console.log("----product", product);
   }
   const capturePhoto = () => {
     // Check if videoRef.current is defined
@@ -457,14 +517,87 @@ const StockManagement = () => {
       throw error; // Re-throw the error for further handling
     }
   };
-  
+ 
+
+  const handleStockChange = (productId, variantId, change) => {
+    console.log("------handleStockChange : ",productId, variantId, change);
+    /*setInventory((prev) => ({
+      ...prev,
+      [variantId]: {
+        productId,
+        quantity: Math.max(0, (prev[variantId] || 0) + change), // Prevent negative values
+      },
+    }));*/
+  };
+
+  const handleCountInputChange = (productId, variantId, value) => {
+    const numericValue = parseInt(value, 10);
+    console.log("------andleCountInputChange : ", numericValue);
+    /*if (!isNaN(numericValue)) {
+      setInventory((prev) => ({
+        ...prev,
+        [variantId]: {
+          productId,
+          quantity: Math.max(0, numericValue), // Prevent negative values
+        },
+      }));
+    }*/
+  };
+
+
+  const saveInventory = async () => { 
+    /*const updatedInventory = Object.entries(quantities).map(([ productId,variantId, quantity]) => ({
+      productId,
+      variantId: parseInt(variantId, 10),
+      quantity,
+    }));*/
+    console.log("------Updated Inventory:", quantities);
+    console.log("------Inventoty saved : ", mainBar.uid, mainUser.uid,new Date());
+    const lastId = await getLastIdAndSet("StoreChecks"); 
+    const newId = lastId !== null && lastId !== undefined ? lastId : 1;
+    let mainBarUid = null;
+    let userUid = null;
+    let todaysDate = new Date();
+    if(mainUser){userUid = mainUser.uid;}    
+    if(mainBar && mainBar.length > 0){ mainBarUid =mainBar.uid;}
+    else {mainBarUid = defaultBar.uid;}
+    const dBInventory = { id:newId, barId:mainBarUid, userId:userUid, checkType:"Check Before sale",checkTime: todaysDate };
+    const canBeInserted = await checkBeforeCRUDExec('StoreChecks', dBInventory);
+  if (canBeInserted[0] === true) {
+  try {
+    await addToObjectStoreExec('StoreChecks', dBInventory, null);
+  }
+  catch (error) {console.error("Product can not  be inserted:", error);}
+   
+  }
+  else{console.log("Error : Product can not  be inserted"); }
+    // Add further logic to save this inventory to the database
+  };
+
+  const handleSaveInventory = () => {
+    // Create a list of products with productId, variantId, and quantity
+    /*const inventoryList = Object.entries(inventory).map(([variantId, { productId, quantity }]) => ({
+      productId,
+      variantId,
+      quantity,
+    }));
+    console.log("Inventory List:", inventoryList);*/
+    console.log("------Inventoty saved : ", mainBar, mainUser,new Date());
+    setActiveInventory(false);
+  };
+
   return (
     <div className="container mt-4">
-      <h2>Ajouter un Produit</h2>
+      <h2>Gestion des Produits et du Stock</h2>
       {/* Button to open the form */}
       <Button variant="primary" className="mb-4" onClick={() => setShowForm(true)}>
         Enregistrer un produit
       </Button>
+     
+      {Array.isArray(productList) && productList.length > 0 && activeInventory === false ? (<Button variant="primary" className="mb-4" onClick={() => setActiveInventory(true)}>
+       Commencer l'inventaire
+      </Button>) : ( <span></span>)}
+      
 
 
 
@@ -479,11 +612,34 @@ const StockManagement = () => {
   const sortedVariations = entry.variations ? [...entry.variations].sort((a, b) => b.isDefault - a.isDefault) : []; // Handle missing variations
   const productId = entry.product.id;
   const currentIndex = currentVariantIndex[productId] || 0; // Fallback to 0 if undefined
-  const currentVariant = sortedVariations[currentIndex] || {}; // Fallback to an empty object if no variant exists
+  const currentVariant = currentVariants[productId] || sortedVariations[currentIndex] || {};
+  // Fallback to an empty object if no variant exists
+  const currentStock = inventory[currentVariant.id] || 0;
+  let myVariation = sortedVariations[currentIndex] || {};
+   // State to track quantities
 
 
-      
+      // Update quantity using buttons or input
+const updateQuantity = (productId, variantId, value) => {
+  setQuantities((prev) => {
+    console.log("Current state of quantities:", prev);
+    const existing = Array.isArray(prev) ? prev.find (
+      (item) => item.productId === productId && item.variantId === variantId
+    ) : null;
 
+    if (existing) {
+      return prev.map((item) =>
+        item.productId === productId && item.variantId === variantId
+          ? { ...item, value: Math.max(0, value) }
+          : item
+      );
+    } else {
+      return Array.isArray(prev)
+        ? [...prev, { productId, variantId, value: Math.max(0, value) }]
+        : [{ productId, variantId, value: Math.max(0, value) }];
+    }
+  });
+};
       return (
         <tr key={productId}>
           <td>
@@ -494,9 +650,9 @@ const StockManagement = () => {
                 <InlineEditableText initialText={entry.product.name} onSave={(newValue) =>
                     handleEdit(
                       'Products', // Table name
-                      'name', // Field name
-                      newValue, // Current value
-                      { id: productId } // Constraints
+                      'id', // Field name
+                      productId, // Current value
+                      {'name': newValue}// Constraints
                     )
                   }inputStyle={{ border: "1px dashed green" }}
                   saveButtonLabel={<i className="fas fa-save" ></i>}
@@ -508,16 +664,37 @@ const StockManagement = () => {
             </div>
 
             {/* Product Image */}
-            <img
-              src={currentVariant.imageUrl}
-              alt={`${entry.product.name} - ${currentVariant.capacity}`}
-              style={{ width: '50px' }}
-            />
+            <div>
+      <img
+        src={currentVariant.imageUrl}
+        alt={`${entry.product.name} - ${currentVariant.capacity}`}
+        style={{ width: '50px'}}
+        //onClick={handleImageClick} // Trigger file input click
+      />
+    <input
+  type="file"
+  accept="image/*"
+  id={currentVariant.id }
+  style={{ display: 'none' }} // Hidden file input
+  ref={fileInputRef}
+  onChange={(e) => editVariantImage(
+    e, // Pass the event object
+    'Variations', // Object store name
+    'imageUrl', // Field name to update
+    { id: currentVariant.id } // Constraints for the update
+  )}
+/>
+    </div>
+            
 
             {/* Product Category */}
-            <div>
+            <div className="variation-data">
            <br/>
-              <InlineEditableText initialText={entry.product.category} onSave={(newValue) =>
+              
+
+         
+         <span>
+         <InlineEditableText initialText={entry.product.category} onSave={(newValue) =>
                   handleEdit(
                     'Products',
                     'category',
@@ -528,48 +705,77 @@ const StockManagement = () => {
                 saveButtonLabel={<i className="fas fa-save" ></i>}
                 cancelButtonLabel={<i className="fas fa-window-close "></i>}
               />
-              <span>  |  </span>
-            {/* Variant Details */}
-            
-            <InlineEditableText initialText= {`${currentVariant.capacity}`}
-              onSave={(newValue) =>
-                  handleEdit(
-                    'Variations',
-                    'capacity',
-                    newValue,
-                    { id: currentVariant.id }
-                  )
-                }inputStyle={{ border: "1px dashed green" }}
-                saveButtonLabel={<i className="fas fa-save" ></i>}
-                cancelButtonLabel={<i className="fas fa-window-close "></i>}
-              /> <span> cl |  </span>
-              <InlineEditableText initialText={currentVariant.price} onSave={(newValue) =>
-                  handleEdit(
-                    'Variations',
-                    'price',
-                    newValue,
-                    { id: currentVariant.id }
-                  )
-                }inputStyle={{ border: "1px dashed green" }}
-                saveButtonLabel={<i className="fas fa-save" ></i>}
-                cancelButtonLabel={<i className="fas fa-window-close "></i>}
-              /> <span> Fcfa  |  </span>
-              <InlineEditableText initialText={currentVariant.packaging}
-             onSave={(newValue) =>
-                  handleEdit(
-                    'Variations',
-                    'packaging',
-                    newValue,
-                    { id: currentVariant.id }
-                  )
-                } inputStyle={{ border: "1px dashed green" }}
-                saveButtonLabel={<i className="fas fa-save" ></i>}
-                cancelButtonLabel={<i className="fas fa-window-close "></i>}
-              /> 
-            
-            </div>
+         {myVariation.price !== null && myVariation.price !== "" && (
+          <><span> | </span>
+         <InlineEditableText key={`price-${forceRender}`} initialText={`${myVariation.price}`}  onSave={(newValue) => handleEdit('Variations','price',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /><span> Fcfa</span></>)}
+         {myVariation.capacity !== null && myVariation.capacity !== "" && ( 
+          <><span> | </span>          
+         <InlineEditableText key={`capacity-${forceRender}`} initialText={`${myVariation.capacity}`} onSave={(newValue) => handleEdit('Variations','capacity',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /><span> cl</span></>)}
+         {myVariation.packaging !== null && myVariation.packaging !== "" && ( 
+          <><span> | </span>          
+         <InlineEditableText key={`packaging-${forceRender}`} initialText={`${myVariation.packaging}`} onSave={(newValue) => handleEdit('Variations','packaging',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /></>)}
+         {myVariation.flavor !== null && myVariation.flavor !== "" && ( 
+          <><span> | </span>          
+         <InlineEditableText key={`flavor-${forceRender}`} initialText={`${myVariation.flavor}`} onSave={(newValue) => handleEdit('Variations','flavor',newValue,{ id:currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /></>)}
+         
+         </span></div>
+            {activeInventory && (
+  <div className="inventory-controls">
+    <button
+      onClick={() => {
+        const currentQuantity = Array.isArray(quantities)
+          ? quantities.find(
+              (item) =>
+                item.productId === productId &&
+                item.variantId === currentVariant.id
+            )?.value || 0
+          : 0;
 
+        updateQuantity(productId, currentVariant.id, currentQuantity - 1);
+      }}
+      className="btn btn-sm btn-danger"
+    >
+      -
+    </button>
+    <input
+      type="number"
+      value={
+        Array.isArray(quantities)
+          ? quantities.find(
+              (item) =>
+                item.productId === productId &&
+                item.variantId === currentVariant.id
+            )?.value || 0
+          : 0
+      }
+      onChange={(e) => {
+        const value = parseInt(e.target.value, 10) || 0;
+        updateQuantity(productId, currentVariant.id, value);
+      }}
+      style={{ width: "60px", margin: "0 10px", textAlign: "center" }}
+    />
+    <button
+      onClick={() => {
+        const currentQuantity = Array.isArray(quantities)
+          ? quantities.find(
+              (item) =>
+                item.productId === productId &&
+                item.variantId === currentVariant.id
+            )?.value || 0
+          : 0;
+
+        updateQuantity(productId, currentVariant.id, currentQuantity + 1);
+      }}
+      className="btn btn-sm btn-success"
+    >
+      +
+    </button>
+  </div>
+)}
+  
          {/* Variant Navigation */}
+         {sortedVariations.length === 1 ? (<span></span>) : ( 
+
         <div style={{ marginTop: '10px' }}>
           <button
             onClick={() =>
@@ -586,38 +792,21 @@ const StockManagement = () => {
           >
             Next
           </button>
-        </div>
+        </div>  )}
       </td>
     </tr>
   );
 })}
   </tbody>
 </Table>
+{activeInventory && (
+        <Button variant="success" className="mt-4" onClick={saveInventory}>
+          Terminer l'inventaire
+        </Button>
+      )}
 
 
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Détails</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product, index) => (
-            <tr key={product.id}>
-              <td>{product.name} {product.category} {product.price}</td>
-              <td>
-                <Button variant="warning" onClick={() => handleEditProduct(index)} className="me-2">
-                  Modifier
-                </Button>
-                <Button variant="danger" onClick={() => handleDeleteProduct(product.id)}>
-                  Supprimer
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+     
       {/* Modal for the form */}
       <Modal show={showForm} onHide={() => setShowForm(false)} size="sm">
         <Modal.Header closeButton>
@@ -689,67 +878,11 @@ const StockManagement = () => {
               onChange={handleImageChange}
               accept="image/*"
             />
-            { <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={(t) => startCamera(null,t)}
-            >
-              <img src={cameraSvg} alt="Utiliser la caméra"  width={25}/>
-            </button>}
+            
           </div>
-          {capturedImage && (
-            <div className="mt-3">
-              <p>Image capturée :</p>
-              <img
-                src={capturedImage}
-                alt="Produit capturé"
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
-              <div className="mt-3">
-              <button
-                type="button"
-                className="btn btn-success me-2"
-                onClick={(t) => imageToField(capturedImage,t)}
-              >
-                Valider la photo
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={stopCamera}
-              >
-                Annuler
-              </button>
-              </div>
-            </div>
-            
-            
-            
-          ) }
-      
+          
 
-        {isCameraOpen.open && (
-          <div className="mt-3">
-            <video ref={videoRef} style={{ maxWidth: "100%" }}></video>
-            <div className="mt-2">
-              <button
-                type="button"
-                className="btn btn-success me-2"
-                onClick={capturePhoto}
-              >
-                Capturer la photo
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={stopCamera}
-              >
-                Annuler
-              </button>
-            </div>
-            <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
-          </div>
-        )}
+        
   </div>
         
         {/* Attributs par défaut */}
@@ -898,67 +1031,11 @@ const StockManagement = () => {
               onChange={(e) => handleVariantImageChange(index, e)}
               accept="image/*"
             />
-            { <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={(t) => startCamera(null, t)}
-            >
-              <img src={cameraSvg} alt="Utiliser la caméra"  width={25}/>
-            </button>}
+           
 
             
           </div>  
-          {capturedImage && (
-            <div className="mt-3">
-              <p>Image capturée :</p>
-              <img
-                src={capturedImage}
-                alt="Produit capturé"
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
-              <div className="mt-3">
-              <button
-                type="button"
-                className="btn btn-success me-2"
-                onClick={capturePhoto}
-              >
-                Valider la photo
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={stopCamera}
-              >
-                Annuler
-              </button>
-              </div>
-            </div>
-            
-            
-            
-          ) }
-          {isCameraOpen.open && (
-          <div className="mt-3">
-            <video ref={videoRef} style={{ maxWidth: "100%" }}></video>
-            <div className="mt-2">
-              <button
-                type="button"
-                className="btn btn-success me-2"
-                onClick={capturePhoto}
-              >
-                Capturer la photo
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={stopCamera}
-              >
-                Annuler
-              </button>
-            </div>
-            <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
-          </div>
-        )}        
+        
         </div>
 
                     </div>

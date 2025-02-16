@@ -163,8 +163,18 @@ async function upgradeDatabase(event) {
             store.createIndex('userId', 'userId', { unique: false });
             store.createIndex('checkType', 'checkType', { unique: false });
             store.createIndex('checkTime', 'checkTime', { unique: false });
-            store.createIndex('stockLevels', 'stockLevels', { unique: false });
             store.createIndex('notes', 'notes', { unique: false });
+          }
+
+          // Create 'ItemSalesReport' object store if it doesn't exist
+          if (!db.objectStoreNames.contains('ItemReport')) {
+            const store = db.createObjectStore('ItemReport', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('ref', 'ref', { unique: false });
+            store.createIndex('productId', 'productId', { unique: false });
+            store.createIndex('varaitionId', 'varaitionId', { unique: false });
+            store.createIndex('quantity', 'quantity', { unique: false });
+            store.createIndex('barId', 'barId', { unique: false });
+            
           }
       
           // Create 'Documents' object store if it doesn't exist
@@ -263,14 +273,7 @@ async function upgradeDatabase(event) {
             store.createIndex('numberOfItemsSold', 'numberOfItemsSold', { unique: false });
           }
       
-          // Create 'ItemSalesReport' object store if it doesn't exist
-          if (!db.objectStoreNames.contains('ItemSalesReport')) {
-            const store = db.createObjectStore('ItemSalesReport', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('name', 'name', { unique: false });
-            store.createIndex('quantitySold', 'quantitySold', { unique: false });
-            store.createIndex('totalSales', 'totalSales', { unique: false });
-            store.createIndex('barId', 'barId', { unique: false });
-          }
+          
       
           // Create 'BarUserPermissions' object store if it doesn't exist
           if (!db.objectStoreNames.contains('BarUserPermissions')) {

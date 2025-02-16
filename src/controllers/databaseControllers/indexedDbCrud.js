@@ -499,6 +499,8 @@ export const getWhereFieldEquals = (objectStoreName, fieldNames, values) => {
   
   // Function to set one or more fields to specific values in records matching a condition
   export const setFieldValues = (objectStoreName, fieldName, fieldValue, updates) => {
+    console.log("setFieldValues : ",objectStoreName, fieldName, fieldValue, updates);
+    if(objectStoreName && fieldName && fieldValue && updates){
     return new Promise((resolve, reject) => {
       openDB().then((db) => {
         const transaction = db.transaction(objectStoreName, 'readwrite');
@@ -546,7 +548,7 @@ export const getWhereFieldEquals = (objectStoreName, fieldNames, values) => {
       }).catch((error) => {
         console.log(`Error opening database: ${error}`);
       });
-    });
+    });}else{ console.log(`Error from parametters`);}
   };
   
   
