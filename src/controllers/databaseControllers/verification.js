@@ -88,7 +88,7 @@ async function checkUniqueCombination(schema, storeName, data) {
 }
 
 
-  const schema = {
+  export const schema = {
     sync_table: {
       keyPath: 'id',
       autoIncrement: true,

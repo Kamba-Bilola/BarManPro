@@ -1,12 +1,7 @@
-export const saveInventory = async (
-    quantities, 
-    mainUser, 
-    mainBar, 
-    defaultBar, 
-    checkBeforeCRUDExec, 
-    addToObjectStoreExec, 
-    getLastIdAndSet
+export const saveInventory = async (quantities,mainUser,mainBar,defaultBar,checkBeforeCRUDExec,addToObjectStoreExec,getLastIdAndSet
   ) => {
+    let response = { success: false, message: "Failed to save inventory!" };
+
     try {
       const lastId = await getLastIdAndSet("StoreChecks");
       const newId = lastId !== null && lastId !== undefined ? lastId : 1;
@@ -59,8 +54,10 @@ export const saveInventory = async (
       );
   
       console.log("✅ Inventory successfully saved.");
+      response = { success: true, message: "✅ Inventory successfully saved!" };
     } catch (error) {
       console.error("❌ Error saving inventory:", error);
     }
+    return response; // Return the response
   };
   

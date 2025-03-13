@@ -9,8 +9,11 @@ import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import InlineEditableText from "../../components/common/InlineEditableText";
 import { saveInventory } from "./StockManagement/SaveInventory";
+import ReportGenerator from "./ReportGenerator";
 
 const StockManagement = () => {
+  const [inventoryStatus, setInventoryStatus] = useState(null); // To store the message
+  const [showViewInventory, setShowViewInventory] = useState(false); // Show button on success
   let myImageUrl = null;
   const [progress, setProgress] = useState({started:false,pc:0});
   const [msg, setMsg] = useState(null);
@@ -604,7 +607,18 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
   };
   */
   const saveInventoryExec = async () => {
-    await saveInventory(quantities, mainUser, mainBar, defaultBar, checkBeforeCRUDExec, addToObjectStoreExec, getLastIdAndSet);
+    setInventoryStatus("Saving inventory..."); // Show loading message
+
+      const response = await saveInventory(quantities, mainUser, mainBar, defaultBar, checkBeforeCRUDExec, addToObjectStoreExec, getLastIdAndSet);
+      if (response.success) {
+        setInventoryStatus(response.message);
+        setShowViewInventory(true); // Show the "View Inventory" button
+    } else {
+        setInventoryStatus(response.message);
+        setShowViewInventory(false);
+    }
+
+    setActiveInventory(false); // Hide the inventory button after saving
   };
 
   return (
@@ -840,11 +854,22 @@ const updateQuantity = (productId, variantId, value, price) => {
 })}
   </tbody>
 </Table>
-{activeInventory && (
-        <Button variant="success" className="mt-4" onClick={saveInventoryExec}>
-          Terminer l'inventaire
-        </Button>
-      )}
+{activeInventory ? (
+    <Button variant="success" className="mt-4" onClick={saveInventoryExec}>
+        Terminer l'inventaire
+    </Button>
+) : (
+    <div>
+        {inventoryStatus && <p className={showViewInventory ? "text-success" : "text-danger"}>{inventoryStatus}</p>}
+        {showViewInventory && (
+            <Button variant="primary" className="mt-2" onClick={() => (alert("inventory here"))}>
+                View Inventory
+            </Button>
+            &&  <ReportGenerator reportId={1} reportType="SalesReport" barId="BAR123" userId="USER456"  action="generate"/>
+        )}
+        </div>
+)}
+
 
 
      
