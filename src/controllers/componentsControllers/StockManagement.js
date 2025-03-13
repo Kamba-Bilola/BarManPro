@@ -8,12 +8,13 @@ import { checkBeforeCRUDExec } from "../databaseControllers/verification";
 import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import InlineEditableText from "../../components/common/InlineEditableText";
-
+import { saveInventory } from "./StockManagement/SaveInventory";
 
 const StockManagement = () => {
   let myImageUrl = null;
   const [progress, setProgress] = useState({started:false,pc:0});
   const [msg, setMsg] = useState(null);
+  const [totalSum, setTotalSum] = useState(0);
   const [forceRender, setForceRender] = useState(0);
   let myMainBar = null;
   let  barId = null;
@@ -54,7 +55,7 @@ const StockManagement = () => {
   const [currentVariants, setCurrentVariants] = useState({});
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [quantities, setQuantities] = useState({});
+  const [quantities, setQuantities] = useState([]);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProduct({ ...product, [name]: value });
@@ -110,6 +111,7 @@ const StockManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await  builddBProduct(product);
+    await loadProducts();
   };
   
   const checkAndInsertToDb = async (myObject,tableName) => {
@@ -349,10 +351,14 @@ const StockManagement = () => {
  
 
   const editVariantImage = async (e,objectStoreName, fieldName, constraints) => {
-    alert(e.target.id);
+    
     console.log("----constraints", constraints);
     const file = e.target.files[0];
-    if(file){let imageFile = await uploadFile(file);myImageUrl = imageFile.fileUrl;
+    if (!file) return;
+    if(file){let imageFile = await uploadFile(file);
+      myImageUrl = imageFile.fileUrl;
+
+     
       if(myImageUrl){
         const myresults = await setFieldValues(objectStoreName,'id',constraints.id ,  {
           [fieldName]: myImageUrl // Update the specified field with new value
@@ -545,14 +551,14 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
   };
 
 
-  const saveInventory = async () => { 
+  /*const saveInventoryExec = async () => { 
     /*const updatedInventory = Object.entries(quantities).map(([ productId,variantId, quantity]) => ({
       productId,
       variantId: parseInt(variantId, 10),
       quantity,
-    }));*/
-    console.log("------Updated Inventory:", quantities);
-    console.log("------Inventoty saved : ", mainBar.uid, mainUser.uid,new Date());
+    }));
+  
+    
     const lastId = await getLastIdAndSet("StoreChecks"); 
     const newId = lastId !== null && lastId !== undefined ? lastId : 1;
     let mainBarUid = null;
@@ -565,25 +571,40 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
     const canBeInserted = await checkBeforeCRUDExec('StoreChecks', dBInventory);
   if (canBeInserted[0] === true) {
   try {
-    await addToObjectStoreExec('StoreChecks', dBInventory, null);
+    const myStoreCheckId = await addToObjectStoreExec('StoreChecks', dBInventory, null);
+    if(myStoreCheckId){
+     
+      
+      const results = await Promise.all(quantities.map(async (item) => {
+       
+        const lastId = await getLastIdAndSet("ItemReport"); 
+        const newId = lastId !== null && lastId !== undefined ? lastId : 1;        
+        console.log(`Product ID: ${item.productId}, Variant ID: ${item.variantId}, Value: ${item.value}, Total: ${item.total}`);
+        const dBItem = { id:newId, ref:"StoreCheck",refId:myStoreCheckId,productId:item.productId,varaitionId:item.variantId,quantity:item.value+1, barId:mainBarUid, priceValue:item.total};
+        
+        
+        console.log("----------------------------------------------------",dBItem);
+        const canBeInserted = await checkBeforeCRUDExec('ItemReport', dBItem);
+        if (canBeInserted[0] === true) {
+          try {
+            const myItemReportId = await addToObjectStoreExec('ItemReport', dBItem, null);
+          }
+          catch (error) {console.error("Product can not  be inserted:", error);}
+        }
+     
+      }));
+     
+      
+    }
   }
   catch (error) {console.error("Product can not  be inserted:", error);}
    
   }
   else{console.log("Error : Product can not  be inserted"); }
-    // Add further logic to save this inventory to the database
   };
-
-  const handleSaveInventory = () => {
-    // Create a list of products with productId, variantId, and quantity
-    /*const inventoryList = Object.entries(inventory).map(([variantId, { productId, quantity }]) => ({
-      productId,
-      variantId,
-      quantity,
-    }));
-    console.log("Inventory List:", inventoryList);*/
-    console.log("------Inventoty saved : ", mainBar, mainUser,new Date());
-    setActiveInventory(false);
+  */
+  const saveInventoryExec = async () => {
+    await saveInventory(quantities, mainUser, mainBar, defaultBar, checkBeforeCRUDExec, addToObjectStoreExec, getLastIdAndSet);
   };
 
   return (
@@ -591,11 +612,11 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
       <h2>Gestion des Produits et du Stock</h2>
       {/* Button to open the form */}
       <Button variant="primary" className="mb-4" onClick={() => setShowForm(true)}>
-        Enregistrer un produit
+      <i className="fas fa-plus"></i> Enregistrer un produit
       </Button>
      
       {Array.isArray(productList) && productList.length > 0 && activeInventory === false ? (<Button variant="primary" className="mb-4" onClick={() => setActiveInventory(true)}>
-       Commencer l'inventaire
+       <i className="fas fa-clipboard-list"></i> Commencer l'inventaire
       </Button>) : ( <span></span>)}
       
 
@@ -620,24 +641,30 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
 
 
       // Update quantity using buttons or input
-const updateQuantity = (productId, variantId, value) => {
+const updateQuantity = (productId, variantId, value, price) => {
   setQuantities((prev) => {
     console.log("Current state of quantities:", prev);
     const existing = Array.isArray(prev) ? prev.find (
       (item) => item.productId === productId && item.variantId === variantId
     ) : null;
-
+    let updatedQuantities;
     if (existing) {
-      return prev.map((item) =>
+      updatedQuantities = prev.map((item) =>
         item.productId === productId && item.variantId === variantId
-          ? { ...item, value: Math.max(0, value) }
+          ? { ...item, value: Math.max(0, value), total: Math.max(0, value) * price }
           : item
       );
     } else {
-      return Array.isArray(prev)
-        ? [...prev, { productId, variantId, value: Math.max(0, value) }]
-        : [{ productId, variantId, value: Math.max(0, value) }];
+      updatedQuantities = Array.isArray(prev)
+        ? [...prev, { productId, variantId, value: Math.max(0, value), total: Math.max(0, value) * price }]
+        : [{ productId, variantId, value: Math.max(0, value), total: Math.max(0, value) * price }];
     }
+
+    // Compute total sum of all variants
+    const newTotalSum = updatedQuantities.reduce((sum, item) => sum + item.total, 0);
+    setTotalSum(newTotalSum);
+
+    return updatedQuantities;
   });
 };
       return (
@@ -645,36 +672,58 @@ const updateQuantity = (productId, variantId, value) => {
           <td>
             {/* Product Name */}
             <div className="productBox">
-              <strong>
-                
-                <InlineEditableText initialText={entry.product.name} onSave={(newValue) =>
-                    handleEdit(
-                      'Products', // Table name
-                      'id', // Field name
-                      productId, // Current value
-                      {'name': newValue}// Constraints
-                    )
-                  }inputStyle={{ border: "1px dashed green" }}
-                  saveButtonLabel={<i className="fas fa-save" ></i>}
-                  cancelButtonLabel={<i className="fas fa-window-close "></i>}
-                />
+              <strong>                
+               <InlineEditableText initialText={entry.product.name} 
+               onSave={(newValue) =>handleEdit('Products','name', newValue,{'id': productId})}
+               inputStyle={{ border: "1px dashed green" }}
+               saveButtonLabel={<i className="fas fa-save" ></i>}
+              cancelButtonLabel={<i className="fas fa-window-close "></i>}/>
               </strong>
-              <Button className="removeProduct alert" variant="primary" size="sm" onClick={ () => handleDeleteProduct(productId,currentVariant.id)}><i className="fas fa-trash-alt"></i></Button>
-             
-            </div>
+              {/* button grid */}
 
-            {/* Product Image */}
-            <div>
+              <div className="button-grid">
+      {!activeInventory === true
+        && <button className="grid-button green"  onClick={() => setShowForm(true)}><i className="fas fa-plus"></i></button>}
+     {!activeInventory === true
+        && <button className="grid-button green" onClick={async () => {
+          await loadProducts();  // Load products
+          setForceRender(prev => prev + 1);  // Force re-render
+        }}><i class="fas fa-sync-alt"></i></button>}
+    <button 
+  className={`grid-button ${Array.isArray(productList) && productList.length > 0 && !activeInventory ? 'green' : 'green big not-show'}`}  
+  onClick={() => {
+    if (Array.isArray(productList) && productList.length > 0 && !activeInventory) {
+      setActiveInventory(true);
+    } else {
+      saveInventoryExec(); // Call saveInventoryExec when class is "green big"
+    }
+  }}
+>
+  <i className={Array.isArray(productList) && productList.length > 0 && !activeInventory 
+    ? "fas fa-clipboard-list"  // Show inventory icon if conditions are met
+    : "far fa-calendar-check"}  // Show different icon when "green big"
+  ></i>
+</button>
+
+{!activeInventory === true && <button className="grid-button"><i className="fas fa-sync-alt"></i></button>
+&&<button className="grid-button red" onClick={ () => handleDeleteProduct(productId,currentVariant.id)}><i className="fas fa-trash-alt"></i></button>}
+      <button className="grid-button grey" onClick={() => handleVariantSlideChange(productId, sortedVariations.length, 'prev')}><i className="fas fa-backward"></i></button>
+      <button className="grid-button grey" onClick={() =>handleVariantSlideChange(productId, sortedVariations.length,'next')}><i className="fas fa-forward"></i></button>
+    </div>
+         
+  </div>
+ <div className="imgBox">
       <img
         src={currentVariant.imageUrl}
         alt={`${entry.product.name} - ${currentVariant.capacity}`}
-        style={{ width: '50px'}}
-        //onClick={handleImageClick} // Trigger file input click
-      />
+        style={{ width: '50px', cursor:"pointer"}}
+        onClick={() => document.getElementById(`fileInput-${currentVariant.id}`).click()}
+        />
+        
     <input
   type="file"
   accept="image/*"
-  id={currentVariant.id }
+  id={`fileInput-${currentVariant.id}`} // Unique ID for each variant
   style={{ display: 'none' }} // Hidden file input
   ref={fileInputRef}
   onChange={(e) => editVariantImage(
@@ -684,16 +733,11 @@ const updateQuantity = (productId, variantId, value) => {
     { id: currentVariant.id } // Constraints for the update
   )}
 />
-    </div>
-            
-
-            {/* Product Category */}
-            <div className="variation-data">
-           <br/>
-              
-
-         
-         <span>
+    </div>    <div className="variation-data">
+    <div className="variation-item">
+          <span>
+          
+          <span className="label">🍷</span>
          <InlineEditableText initialText={entry.product.category} onSave={(newValue) =>
                   handleEdit(
                     'Products',
@@ -707,19 +751,23 @@ const updateQuantity = (productId, variantId, value) => {
               />
          {myVariation.price !== null && myVariation.price !== "" && (
           <><span> | </span>
+          <span className="label">💰</span>
          <InlineEditableText key={`price-${forceRender}`} initialText={`${myVariation.price}`}  onSave={(newValue) => handleEdit('Variations','price',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /><span> Fcfa</span></>)}
          {myVariation.capacity !== null && myVariation.capacity !== "" && ( 
-          <><span> | </span>          
+          <><span> | </span>
+            <span className="label">📏</span>        
          <InlineEditableText key={`capacity-${forceRender}`} initialText={`${myVariation.capacity}`} onSave={(newValue) => handleEdit('Variations','capacity',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /><span> cl</span></>)}
          {myVariation.packaging !== null && myVariation.packaging !== "" && ( 
-          <><span> | </span>          
+          <><span> | </span> 
+          <span className="label">📦</span> 
          <InlineEditableText key={`packaging-${forceRender}`} initialText={`${myVariation.packaging}`} onSave={(newValue) => handleEdit('Variations','packaging',newValue,{ id: currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /></>)}
          {myVariation.flavor !== null && myVariation.flavor !== "" && ( 
-          <><span> | </span>          
+          <><span> | </span>
+          <span className="label">🍹</span>          
          <InlineEditableText key={`flavor-${forceRender}`} initialText={`${myVariation.flavor}`} onSave={(newValue) => handleEdit('Variations','flavor',newValue,{ id:currentVariant.id })}inputStyle={{ border: "1px dashed green" }} saveButtonLabel={<i className="fas fa-save" ></i>}cancelButtonLabel={<i className="fas fa-window-close "></i>} /></>)}
          
-         </span></div>
-            {activeInventory && (
+         </span></div></div>
+         {activeInventory && (
   <div className="inventory-controls">
     <button
       onClick={() => {
@@ -731,7 +779,7 @@ const updateQuantity = (productId, variantId, value) => {
             )?.value || 0
           : 0;
 
-        updateQuantity(productId, currentVariant.id, currentQuantity - 1);
+        updateQuantity(productId, currentVariant.id, currentQuantity - 1, myVariation.price);
       }}
       className="btn btn-sm btn-danger"
     >
@@ -750,7 +798,7 @@ const updateQuantity = (productId, variantId, value) => {
       }
       onChange={(e) => {
         const value = parseInt(e.target.value, 10) || 0;
-        updateQuantity(productId, currentVariant.id, value);
+        updateQuantity(productId, currentVariant.id, value, myVariation.price);
       }}
       style={{ width: "60px", margin: "0 10px", textAlign: "center" }}
     />
@@ -764,35 +812,28 @@ const updateQuantity = (productId, variantId, value) => {
             )?.value || 0
           : 0;
 
-        updateQuantity(productId, currentVariant.id, currentQuantity + 1);
+        updateQuantity(productId, currentVariant.id, currentQuantity + 1, myVariation.price);
       }}
       className="btn btn-sm btn-success"
     >
       +
     </button>
+
+    {/* Show total price for each variant */}
+    <p className="total">
+    Sous-total :<strong>{" "}
+      {(
+        (quantities.find((item) => item.variantId === currentVariant.id)?.total || 0)
+      ).toFixed(2)}{" "}
+      Fcfa</strong>    |     
+      Total général : <strong>{totalSum.toFixed(2)} Fcfa</strong>
+    </p>
   </div>
 )}
-  
-         {/* Variant Navigation */}
-         {sortedVariations.length === 1 ? (<span></span>) : ( 
 
-        <div style={{ marginTop: '10px' }}>
-          <button
-            onClick={() =>
-              handleVariantSlideChange(productId, sortedVariations.length, 'prev')
-            }
-          >
-            Previous
-          </button>
-          <button
-            onClick={() =>
-              handleVariantSlideChange(productId, sortedVariations.length, 'next')
-            }
-            style={{ marginLeft: '10px' }}
-          >
-            Next
-          </button>
-        </div>  )}
+
+  
+         
       </td>
     </tr>
   );
@@ -800,7 +841,7 @@ const updateQuantity = (productId, variantId, value) => {
   </tbody>
 </Table>
 {activeInventory && (
-        <Button variant="success" className="mt-4" onClick={saveInventory}>
+        <Button variant="success" className="mt-4" onClick={saveInventoryExec}>
           Terminer l'inventaire
         </Button>
       )}
@@ -1053,7 +1094,7 @@ const updateQuantity = (productId, variantId, value) => {
 
         {/* Bouton d'enregistrement */}
         <button type="submit" className="btn btn-success">
-          Enregistrer le produit
+        <i className="fas fa-plus"></i> Enregistrer le produit
         </button>
       </form>
       </Modal.Body>

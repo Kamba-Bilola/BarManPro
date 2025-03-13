@@ -1,5 +1,5 @@
 export const DB_NAME = 'BAR_MAN_PRO_DB';
-export const DB_VERSION = 2;
+export const DB_VERSION =1;
 export let db;
 
 // Function to check if the database exists
@@ -62,16 +62,25 @@ export function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = async (event) => {
+      console.log("⚡ Database upgrade required. Running upgrade...");
       await upgradeDatabase(event);
-  };
-    request.onerror = (event) => {
-      reject(new Error("Erreur opening database"));
     };
-
+    
     request.onsuccess = (event) => {
-      resolve(event.target.result); // Resolve with the database instance
+      console.log("✅ Database opened successfully.");
+      resolve(event.target.result);
     };
-
+    
+    request.onerror = (event) => {
+      console.error("❌ Error opening database:", event.target.error);
+      reject(new Error("Failed to open IndexedDB. Try clearing the database."));
+    };
+    
+    request.onblocked = () => {
+      console.warn("🚫 Database upgrade blocked! Close other tabs using IndexedDB.");
+      alert("Database upgrade is blocked. Please close all other tabs using this app and refresh.");
+      reject(new Error("Upgrade blocked"));
+    };
     
   });
 }
@@ -169,8 +178,7 @@ async function upgradeDatabase(event) {
           // Create 'ItemSalesReport' object store if it doesn't exist
           if (!db.objectStoreNames.contains('ItemReport')) {
             const store = db.createObjectStore('ItemReport', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('ref', 'ref', { unique: false });
-            store.createIndex('refId', 'refId', { unique: false });
+            store.createIndex('oldreff', 'oldreff', { unique: false });
             store.createIndex('productId', 'productId', { unique: false });
             store.createIndex('varaitionId', 'varaitionId', { unique: false });
             store.createIndex('quantity', 'quantity', { unique: false });
@@ -295,4 +303,73 @@ async function upgradeDatabase(event) {
    
  
 }
-  
+
+export async function backupDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME);
+
+    request.onsuccess = (event) => {
+      const oldDb = event.target.result;
+      const backup = {};
+      const storeNames = Array.from(oldDb.objectStoreNames);
+
+      if (storeNames.length === 0) {
+        console.warn("⚠ No object stores found in database.");
+        oldDb.close();
+        resolve(null);
+        return;
+      }
+
+      const transaction = oldDb.transaction(storeNames, 'readonly');
+      let pendingStores = storeNames.length;
+
+      storeNames.forEach((storeName) => {
+        const store = transaction.objectStore(storeName);
+        const getAllRequest = store.getAll();
+
+        getAllRequest.onsuccess = (e) => {
+          backup[storeName] = e.target.result;
+          pendingStores--;
+
+          if (pendingStores === 0) {
+            console.log("✅ Database backup completed:", backup);
+            oldDb.close();
+            resolve(backup);
+          }
+        };
+
+        getAllRequest.onerror = (error) => {
+          console.error(`❌ Error backing up ${storeName}:`, error.target.error);
+          reject(new Error(`Failed to backup ${storeName}: ${error.target.error}`));
+        };
+      });
+    };
+
+    request.onerror = (error) => {
+      console.error("❌ Failed to open database for backup:", error.target.error);
+      reject(new Error("Failed to open database for backup"));
+    };
+  });
+}
+
+export  async function deleteDatabase() {
+  return new Promise((resolve, reject) => {
+    const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+    deleteRequest.onsuccess = () => {
+      console.log("🗑️ Database deleted successfully");
+      resolve();
+    };
+    deleteRequest.onerror = () => reject(new Error("Failed to delete database"));
+  });
+}
+
+export async function restoreDatabase(backup) {
+  const db = await openDB(false);
+  const transaction = db.transaction(Object.keys(backup), "readwrite");
+  Object.entries(backup).forEach(([storeName, records]) => {
+    const store = transaction.objectStore(storeName);
+    records.forEach(record => store.put(record));
+  });
+  await transaction.complete;
+  console.log("✅ Database restored from backup");
+}

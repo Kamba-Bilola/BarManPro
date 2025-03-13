@@ -5,9 +5,18 @@ import StockManagement from '../../controllers/componentsControllers/StockManage
 const StockCheker = () => {
     const {stockData, setStockData} = useGlobalState();
     const loadStock = async () => {
-        const fetchedStock = await getAllObjectStoreDataExec('Products');
-        console.log("::: fetchedStock ",fetchedStock);
-    }
+        try {
+              
+          // Fetch data only if the object store exists
+          const fetchedStock = await getAllObjectStoreDataExec("Products");
+          console.log("::: fetchedStock ", fetchedStock);
+      
+        } catch (error) {
+          console.error("Error loading stock:", error);
+        }
+      };
+      
+    
     loadStock();
     //useEffect(() => {}, []); 
 

@@ -231,14 +231,17 @@ async function checkUniqueCombination(schema, storeName, data) {
         { name: 'stockId', unique: false, required: false, label: 'ID du stock' }
       ]
     },    
-    ItemSalesReport: {
+    ItemReport: {
       keyPath: 'id',
       autoIncrement: true,
       indexes: [
-      { name: 'name', unique: false, required: true, label: 'Nom' },
-      { name: 'quantitySold', unique: false, required: true, label: 'Quantité vendue' },
-      { name: 'totalSales', unique: false, required: true, label: 'Ventes totales' },
-      { name: 'barId', unique: false, required: true, label: 'ID du bar' }
+      { name: 'ref', unique: false, required: true, label: 'ref' },
+      { name: 'refId', unique: false, required: true, label: 'refId' },
+      { name: 'productId', unique: false, required: true, label: 'productId' },
+      { name: 'varaitionId', unique: false, required: true, label: 'varaitionId' },
+      { name: 'quantity', unique: false, required: true, label: 'Quantité vendue' },
+      { name: 'barId', unique: false, required: true, label: 'ID du bar' },
+      { name: 'priceValue', unique: false, required: true, label: 'Total par Item' },
       ]
     },
     

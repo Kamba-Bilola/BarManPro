@@ -135,6 +135,22 @@ h1{font-size: 2em;}
 }
 /* Main button style */
 button.btn-primary {
+  &.nav-btn{
+  background: #6f6d6d;
+  border: 0;
+  height: 100%;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: fit-content;
+  color: #fff;
+  position: absolute;
+  overflow: hidden;
+  transition: color 0.3sease;
+  left: 0;
+  &.prev{left: 0;}
+  &.next{left: 20px;}
+
+}
   background: #ea391f;
   border: 0;
   height: 100%;
@@ -319,7 +335,36 @@ form footer{ margin: 30px 0;}
   }
 }
 
-.productBox{ position: relative;
+.variation-data,.total{
+  padding: 10px 0;
+  line-height: 1;
+  border-top: 1px dashed;
+  border-bottom: 1px dashed;
+  margin: 10px auto;
+  background: #fff;
+}
+.total {
+  font-size: 12px;
+}
+.variation-data {
+  margin: 10px 0 10px;
+  font-size: 15px;
+  letter-spacing: -1px;
+}
+.imgBox{min-height: 120px;}
+.productBox{ position: relative;  
+  .fa-save,.fa-window-close{z-index: 1; position: relative; opacity: 1;}
+  .refreshProduct{ position: absolute;
+    right: 40px;
+    width: fit-content;
+    padding: 0px 10px 30px 10px;
+    border-radius: 5px;
+    font-size: 1rem;
+    background: #0a58ca;
+   
+  }
+  
+  .refreshProduct:hover{background: #198754;}
   .removeProduct {
     position: absolute;
     right: 0;
@@ -330,4 +375,63 @@ form footer{ margin: 30px 0;}
     background: #ea391f;
 }
 .removeProduct:hover {background: red;}
+
   }
+
+
+  .button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    max-width: 90px;
+    margin: auto;
+    position: absolute;
+    right: 0;
+    top: 40px;
+  }
+  
+  .grid-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    border: none;
+    background: #043f97;
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3sease;
+    &.green{
+      //background: #198754; /* Slightly lighter on hover */
+      &:hover {
+        background: #198754; /* Slightly lighter on hover */
+      }
+      &.big{width:65px; }
+      
+    }
+    &.red{
+      //background:#dc3545;
+      &:hover{ background:#ec1228;}
+      
+    }
+    &.grey{
+        background: #666c73;
+        font-size: 12px;
+        height: 20px;
+        &:hover{ background:#5a5858;}
+    }
+    &.yellow{
+      background: #a98a01;
+      &:hover{ background:#e6c018;}
+  }
+      
+    }
+    .not-show{height: 0; padding: 0; font-size: 0;}
+  
+  .grid-button:hover {
+    background: #034bb6;
+  }
+  

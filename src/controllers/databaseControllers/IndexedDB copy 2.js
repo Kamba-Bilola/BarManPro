@@ -1,87 +1,98 @@
 export const DB_NAME = 'BAR_MAN_PRO_DB';
-export const DB_VERSION = 2;
+export const DB_VERSION = 2; // Increase version number to trigger upgrade
 export let db;
 
-// Function to check if the database exists
+// ✅ Check if database exists
 export const checkIfDatabaseExists = () => {
-    
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onsuccess = function(event) { const db = event.target.result;
-        db.close(); resolve(true); };
-  
-      request.onupgradeneeded = function(event) {
-        event.target.transaction.abort(); resolve(false); };
-  
-      request.onerror = function(event) { resolve(false);};
-  
-      request.onblocked = function(event) {
-        reject(new Error("Database check blocked."));
-      };
-  
-      request.onabort = function(event) {
-        reject(new Error("Transaction aborted."));
-      };
-  
-      // Adding a timeout as a safety measure
-      setTimeout(() => {
-        reject(new Error("Database check timed out."));
-      }, 15000); // 5-second timeout for the request
-    });
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME);
+
+    request.onsuccess = function (event) {
+      const db = event.target.result;
+      db.close();
+      resolve(true);
+    };
+
+    request.onupgradeneeded = async (event) => {
+      console.log("⚡ Database upgrade needed. Running upgrade...");
+      await upgradeDatabase(event);
+  event.target.transaction.oncomplete = () => {
+    console.log("🎯 Upgrade complete. Closing DB...");
+    event.target.result.close(); // Close DB after upgrade
   };
+  resolve(event.target.result);
+    };
 
-  export function createDatabase() {
-    return new Promise((resolve, reject) => {
-      if (!window.indexedDB) {
-        return reject(new Error("Erreur Code 2: Votre navigateur ne support pas notre système de base de donné"));
+    request.onerror = () => reject(new Error("Error checking database existence"));
+  });
+};
+
+// ✅ Create or Upgrade Database
+export function createDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      return reject(new Error("IndexedDB is not supported by your browser."));
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(new Error("Error creating database"));
+
+    request.onsuccess = (event) => {
+      console.log("✅ Database opened successfully.");
+      resolve(event.target.result);
+    };
+
+    request.onupgradeneeded = async (event) => {
+      try {
+        await upgradeDatabase(event);
+        console.log("✅ Database upgrade completed.");
+        resolve(event.target.result);
+      } catch (error) {
+        console.error("❌ Database upgrade failed:", error);
+        reject(error);
       }
-  
-      // Open the database, specifying a version number (e.g., 1)
-      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-  
-      request.onerror = (event) => {
-        reject(new Error("Erreur creating database"));
-      };
-  
-      request.onsuccess = (event) => {
-        resolve(event.target.result); // Resolve with the database instance
-      };
-  
-      request.onupgradeneeded = async (event) => {
-        try {
-          await upgradeDatabase(event);
-        } catch (error) {
-          reject(new Error("Problème de mise à jour de la base de données"));
-        }
-      };
-    });
-  }
+    };
+  });
+}
 
-  // Function to open and return the database instance
+// ✅ Open Database
 export function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onsuccess = (event) => resolve(event.target.result);
+    request.onerror = () => reject(new Error("Error opening database"));
+
     request.onupgradeneeded = async (event) => {
-      await upgradeDatabase(event);
-  };
-    request.onerror = (event) => {
-      reject(new Error("Erreur opening database"));
+      try {
+        console.log("⚡ Database upgrade in progress...");
+        await upgradeDatabase(event);
+        console.log("🎯 Upgrade complete.");
+        resolve(event.target.result);
+      } catch (error) {
+        reject(error);
+      }
     };
 
-    request.onsuccess = (event) => {
-      resolve(event.target.result); // Resolve with the database instance
+    request.onblocked = () => {
+      console.error("❌ Upgrade blocked! Close other tabs using IndexedDB.");
+      alert("Database upgrade is blocked. Please close all other tabs and refresh this page.");
+      reject(new Error("Upgrade blocked"));
     };
-
     
   });
 }
 
-
+// ✅ Upgrade Database
 async function upgradeDatabase(event) {
-  
-  // Setup database schema if it does not exist
   const db = event.target.result;
-
+  console.log("🚀 Starting database upgrade...");
+  // Close all existing database connections
+  db.onversionchange = () => {
+    db.close();
+    console.warn("⚠️ Database connection closed due to version change.");
+  };
             // Create 'Locations' object store if it doesn't exist
               if (!db.objectStoreNames.contains('Locations')) {
                   const store = db.createObjectStore('Locations', { keyPath: 'id', autoIncrement: true });
@@ -169,8 +180,7 @@ async function upgradeDatabase(event) {
           // Create 'ItemSalesReport' object store if it doesn't exist
           if (!db.objectStoreNames.contains('ItemReport')) {
             const store = db.createObjectStore('ItemReport', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('ref', 'ref', { unique: false });
-            store.createIndex('refId', 'refId', { unique: false });
+            store.createIndex('rery', 'rery', { unique: false });
             store.createIndex('productId', 'productId', { unique: false });
             store.createIndex('varaitionId', 'varaitionId', { unique: false });
             store.createIndex('quantity', 'quantity', { unique: false });
@@ -293,6 +303,7 @@ async function upgradeDatabase(event) {
     // Create other object stores similarly...
 
    
- 
+// ✅ Close the database after upgrade
+db.close();
+console.log("🎯 Database upgrade complete, and database closed.");
 }
-  

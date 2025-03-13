@@ -170,7 +170,6 @@ async function upgradeDatabase(event) {
           if (!db.objectStoreNames.contains('ItemReport')) {
             const store = db.createObjectStore('ItemReport', { keyPath: 'id', autoIncrement: true });
             store.createIndex('ref', 'ref', { unique: false });
-            store.createIndex('refId', 'refId', { unique: false });
             store.createIndex('productId', 'productId', { unique: false });
             store.createIndex('varaitionId', 'varaitionId', { unique: false });
             store.createIndex('quantity', 'quantity', { unique: false });
