@@ -1,5 +1,5 @@
 export const DB_NAME = 'BAR_MAN_PRO_DB';
-export const DB_VERSION = 2;
+export const DB_VERSION = 1;
 export let db;
 
 // Function to check if the database exists
@@ -40,14 +40,26 @@ export const checkIfDatabaseExists = () => {
       const request = window.indexedDB.open(DB_NAME, DB_VERSION);
   
       request.onerror = (event) => {
-        reject(new Error("Erreur creating database"));
+        reject(new Error("Erreur creating database" + event.target.error));
       };
   
       request.onsuccess = (event) => {
-        resolve(event.target.result); // Resolve with the database instance
+        db = event.target.result;
+      resolve(db);
+      };
+
+      request.onblocked = () => {
+        console.warn("Database upgrade blocked. Close other tabs/windows using the database.");
+        // Implement retry logic or user notification here
+        reject(new Error("DATABASE_BLOCKED"));
       };
   
       request.onupgradeneeded = async (event) => {
+        const db = event.target.result;
+        const oldVersion = event.oldVersion;
+        const transaction = event.target.transaction;
+         // Handle database version upgrades incrementally
+        migrateDatabase(db, oldVersion, transaction);
         try {
           await upgradeDatabase(event);
         } catch (error) {
@@ -61,15 +73,27 @@ export const checkIfDatabaseExists = () => {
 export function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = async (event) => {
-      await upgradeDatabase(event);
-  };
+    request.onupgradeneeded = (event) => {
+      migrateDatabase(event.target.result, event.oldVersion, event.target.transaction);
+    };
+
+    request.onblocked = () => {
+      reject(new Error("DATABASE_BLOCKED"));
+    };
     request.onerror = (event) => {
-      reject(new Error("Erreur opening database"));
+      reject(new Error("Database open error: " + event.target.error));
     };
 
     request.onsuccess = (event) => {
-      resolve(event.target.result); // Resolve with the database instance
+      db = event.target.result;
+      
+      // Verify schema version
+      if (db.version !== DB_VERSION) {
+        db.close();
+        createDatabase().then(resolve).catch(reject);
+      } else {
+        resolve(db);
+      }
     };
 
     
@@ -79,8 +103,40 @@ export function openDB() {
 
 async function upgradeDatabase(event) {
   
+  
+ 
+}
+
+
+
+function migrateDatabase(db, oldVersion, transaction) {
+  // Always wrap migration in a transaction
+  transaction.oncomplete = () => console.log("Database upgrade completed");
+  transaction.onerror = (event) => {
+    console.error("Migration error:", event.target.error);
+    throw new Error("Migration failed: " + event.target.error);
+  };
+
+  // Incremental migration based on oldVersion
+  if (oldVersion < 1) {
+    // Initial database creation
+    createInitialSchema(db);
+  }
+
+  if (oldVersion < 2) {
+    // Version 2 migrations
+    migrateToVersion2(db);
+  }
+
+  if (oldVersion < 3) {
+    // Version 3 migrations (current version)
+    migrateToVersion3(db);
+  }
+}
+
+function createInitialSchema(db) {
   // Setup database schema if it does not exist
-  const db = event.target.result;
+  
 
             // Create 'Locations' object store if it doesn't exist
               if (!db.objectStoreNames.contains('Locations')) {
@@ -170,6 +226,7 @@ async function upgradeDatabase(event) {
           if (!db.objectStoreNames.contains('ItemReport')) {
             const store = db.createObjectStore('ItemReport', { keyPath: 'id', autoIncrement: true });
             store.createIndex('ref', 'ref', { unique: false });
+            store.createIndex('refId', 'refId', { unique: false });
             store.createIndex('productId', 'productId', { unique: false });
             store.createIndex('variationId', 'variationId', { unique: false });
             store.createIndex('quantity', 'quantity', { unique: false });
@@ -292,6 +349,37 @@ async function upgradeDatabase(event) {
     // Create other object stores similarly...
 
    
- 
 }
-  
+
+function migrateToVersion2(db) {
+  // Example migration for version 2
+  if (!db.objectStoreNames.contains('NewTable')) {
+    const store = db.createObjectStore('NewTable', { keyPath: 'id' });
+    // Add indexes
+  }
+
+  // Modify existing stores
+ /* if (db.objectStoreNames.contains('ItemReport')) {
+    const store = transaction.objectStore('ItemReport');
+    // Fix typo in variationId
+    if (!store.indexNames.contains('variationId')) {
+      store.createIndex('variationId', 'variationId', { unique: false });
+    }
+    // Remove old typo index if exists
+    if (store.indexNames.contains('variationId')) {
+      store.deleteIndex('variationId');
+    }
+  }*/
+}
+
+function migrateToVersion3(db) {
+  // Example migration for version 3
+  // Add new indexes or modify existing structure
+  /*if (db.objectStoreNames.contains('Users')) {
+    const store = transaction.objectStore('Users');
+    if (!store.indexNames.contains('phone')) {
+      store.createIndex('phone', 'phone', { unique: true });
+    }
+  }*/
+}
+

@@ -238,7 +238,7 @@ async function checkUniqueCombination(schema, storeName, data) {
       { name: 'ref', unique: false, required: true, label: 'ref' },
       { name: 'refId', unique: false, required: true, label: 'refId' },
       { name: 'productId', unique: false, required: true, label: 'productId' },
-      { name: 'varaitionId', unique: false, required: true, label: 'varaitionId' },
+      { name: 'variationId', unique: false, required: true, label: 'variationId' },
       { name: 'quantity', unique: false, required: true, label: 'Quantité vendue' },
       { name: 'barId', unique: false, required: true, label: 'ID du bar' },
       { name: 'priceValue', unique: false, required: true, label: 'Total par Item' },

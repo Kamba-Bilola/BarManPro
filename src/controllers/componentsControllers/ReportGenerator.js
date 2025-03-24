@@ -3,16 +3,19 @@ import generateReport from "./ReportGenerator/generateReport";
 import saveReport from "./ReportGenerator/saveReport";
 import viewPrintReport from "./ReportGenerator/viewPrintReport";
 import { getAllObjectStoreDataExec } from "../databaseControllers/indexedDbCrud";
+import PDFViewer from "../Documents/PDFViewer";
 
 const ReportGenerator = ({ reportId, reportType, barId, userId, action}) => {
   const [reportStatus, setReportStatus] = useState(null);
   const [reportPath, setReportPath] = useState(null);
   const [allReports, setAllReports] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [fileUrl, setFileUrl] = useState(null);
 
   useEffect(() => {
     if (!reportId) {fetchAllReports();}
   }, [reportId]);
+  useEffect(() => {  }, [fileUrl]);
   useEffect(() => {
     if (action=="generate") {
         const generateReport = async () => { await handleGenerateReport();};
@@ -37,6 +40,7 @@ const ReportGenerator = ({ reportId, reportType, barId, userId, action}) => {
 
       console.log("📄 Structuring data for report...");
       const reportFile = await generateReport(reportType,reportId,barId,userId);
+      setFileUrl(reportFile);
 
       console.log("💾 Saving report metadata...");
       const savedReport = await saveReport(reportFile, reportType, reportId, userId);
@@ -62,6 +66,7 @@ const ReportGenerator = ({ reportId, reportType, barId, userId, action}) => {
 
       {/* 📌 MODAL */}
       {showModal && (
+        
         <div className="modal show d-block" tabIndex="-1" role="dialog">
           <div className="modal-dialog modal-lg" role="document">
             <div className="modal-content">
@@ -72,6 +77,8 @@ const ReportGenerator = ({ reportId, reportType, barId, userId, action}) => {
                 </button>
               </div>
               <div className="modal-body">
+                // Usage:
+                {fileUrl && <PDFViewer pdfUrl={fileUrl} />}
                 {reportId ? (
                   <>
                     <p>Report Type: <strong>{reportType}</strong></p>
@@ -128,6 +135,7 @@ const ReportGenerator = ({ reportId, reportType, barId, userId, action}) => {
             </div>
           </div>
         </div>
+      
       )}
     </div>
   );

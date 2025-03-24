@@ -8,12 +8,13 @@ import { checkBeforeCRUDExec } from "../databaseControllers/verification";
 import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import InlineEditableText from "../../components/common/InlineEditableText";
-import { saveInventory } from "./StockManagement/SaveInventory";
+import { saveInventory, getLastStoreCheckId } from "./StockManagement/SaveInventory";
 import ReportGenerator from "./ReportGenerator";
 
 const StockManagement = () => {
   const [inventoryStatus, setInventoryStatus] = useState(null); // To store the message
   const [showViewInventory, setShowViewInventory] = useState(false); // Show button on success
+  const [reportId,setReportId] = useState(null);
   let myImageUrl = null;
   const [progress, setProgress] = useState({started:false,pc:0});
   const [msg, setMsg] = useState(null);
@@ -110,7 +111,13 @@ const StockManagement = () => {
     );
     setProduct({ ...product, variants: updatedVariants });
 };
-
+// In your StockManagement component, add a function like:
+const handleRemoveVariant = (index) => {
+  setProduct((prevProduct) => ({
+    ...prevProduct,
+    variants: prevProduct.variants.filter((_, idx) => idx !== index)
+  }));
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     await  builddBProduct(product);
@@ -136,7 +143,7 @@ const StockManagement = () => {
     mainBarUid =mainBar.uid;
   }
   else {mainBarUid = defaultBar.uid;}
-  
+ 
   dBProduct = { id:newId, name:product.name,category: product.category,barId:mainBarUid};
   const prodcutCanBeInserted = await checkBeforeCRUDExec('Products', dBProduct);
   if (prodcutCanBeInserted[0] === true) {
@@ -583,7 +590,7 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
         const lastId = await getLastIdAndSet("ItemReport"); 
         const newId = lastId !== null && lastId !== undefined ? lastId : 1;        
         console.log(`Product ID: ${item.productId}, Variant ID: ${item.variantId}, Value: ${item.value}, Total: ${item.total}`);
-        const dBItem = { id:newId, ref:"StoreCheck",refId:myStoreCheckId,productId:item.productId,varaitionId:item.variantId,quantity:item.value+1, barId:mainBarUid, priceValue:item.total};
+        const dBItem = { id:newId, ref:"StoreCheck",refId:myStoreCheckId,productId:item.productId,variationId:item.variantId,quantity:item.value+1, barId:mainBarUid, priceValue:item.total};
         
         
         console.log("----------------------------------------------------",dBItem);
@@ -618,6 +625,8 @@ const handleVariantSlideChange = (productId, totalVariants, direction) => {
         setShowViewInventory(false);
     }
 
+
+    setReportId(getLastStoreCheckId());
     setActiveInventory(false); // Hide the inventory button after saving
   };
 
@@ -721,8 +730,8 @@ const updateQuantity = (productId, variantId, value, price) => {
 
 {!activeInventory === true && <button className="grid-button"><i className="fas fa-sync-alt"></i></button>
 &&<button className="grid-button red" onClick={ () => handleDeleteProduct(productId,currentVariant.id)}><i className="fas fa-trash-alt"></i></button>}
-      <button className="grid-button grey" onClick={() => handleVariantSlideChange(productId, sortedVariations.length, 'prev')}><i className="fas fa-backward"></i></button>
-      <button className="grid-button grey" onClick={() =>handleVariantSlideChange(productId, sortedVariations.length,'next')}><i className="fas fa-forward"></i></button>
+{!activeInventory === true && <button className="grid-button grey" onClick={() => handleVariantSlideChange(productId, sortedVariations.length, 'prev')}><i className="fas fa-backward"></i></button>}
+{!activeInventory === true &&<button className="grid-button grey" onClick={() =>handleVariantSlideChange(productId, sortedVariations.length,'next')}><i className="fas fa-forward"></i></button>}
     </div>
          
   </div>
@@ -783,6 +792,7 @@ const updateQuantity = (productId, variantId, value, price) => {
          </span></div></div>
          {activeInventory && (
   <div className="inventory-controls">
+     <button className="btn btn-sm btn-success arrow" onClick={() => handleVariantSlideChange(productId, sortedVariations.length, 'prev')}><i className="fas fa-backward"></i></button>
     <button
       onClick={() => {
         const currentQuantity = Array.isArray(quantities)
@@ -795,7 +805,7 @@ const updateQuantity = (productId, variantId, value, price) => {
 
         updateQuantity(productId, currentVariant.id, currentQuantity - 1, myVariation.price);
       }}
-      className="btn btn-sm btn-danger"
+      className="btn btn-sm btn-success"
     >
       -
     </button>
@@ -832,6 +842,7 @@ const updateQuantity = (productId, variantId, value, price) => {
     >
       +
     </button>
+    <button  className="btn btn-sm btn-success arrow" onClick={() =>handleVariantSlideChange(productId, sortedVariations.length,'next')}><i className="fas fa-forward"></i></button>
 
     {/* Show total price for each variant */}
     <p className="total">
@@ -864,8 +875,8 @@ const updateQuantity = (productId, variantId, value, price) => {
         {showViewInventory && (
             <Button variant="primary" className="mt-2" onClick={() => (alert("inventory here"))}>
                 View Inventory
-            </Button>
-            &&  <ReportGenerator reportId={1} reportType="SalesReport" barId="BAR123" userId="USER456"  action="generate"/>
+            </Button> 
+            &&  <ReportGenerator reportId={reportId} reportType="StockReport" barId={mainBar} userId={mainUser}  action="generate"/>
         )}
         </div>
 )}
@@ -1103,6 +1114,15 @@ const updateQuantity = (productId, variantId, value, price) => {
           </div>  
         
         </div>
+        <div>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={() => handleRemoveVariant(index)}
+        >
+          Annuler variante
+        </Button>
+      </div>
 
                     </div>
           ))}

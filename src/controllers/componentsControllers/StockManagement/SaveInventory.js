@@ -1,3 +1,4 @@
+let lastStoreCheckId = null; // Declare globally
 export const saveInventory = async (quantities,mainUser,mainBar,defaultBar,checkBeforeCRUDExec,addToObjectStoreExec,getLastIdAndSet
   ) => {
     let response = { success: false, message: "Failed to save inventory!" };
@@ -25,6 +26,7 @@ export const saveInventory = async (quantities,mainUser,mainBar,defaultBar,check
   
       const myStoreCheckId = await addToObjectStoreExec('StoreChecks', dBInventory, null);
       if (!myStoreCheckId) return;
+      lastStoreCheckId = myStoreCheckId; 
   
       // Process each item in quantities
       await Promise.all(
@@ -37,7 +39,7 @@ export const saveInventory = async (quantities,mainUser,mainBar,defaultBar,check
             ref: "StoreCheck",
             refId: myStoreCheckId,
             productId: item.productId,
-            varaitionId: item.variantId,
+            variationId: item.variantId,
             quantity: item.value + 1,
             barId: mainBarUid,
             priceValue: item.total
@@ -60,4 +62,7 @@ export const saveInventory = async (quantities,mainUser,mainBar,defaultBar,check
     }
     return response; // Return the response
   };
+
+  // Export a function to access the lastStoreCheckId
+export const getLastStoreCheckId = () => lastStoreCheckId;
   
