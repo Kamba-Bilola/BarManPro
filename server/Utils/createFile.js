@@ -16,8 +16,10 @@ async function createFile(data, format,folderPath) {
 
         const { header, body } = data;
         const { date, reportType, barName } = header;
-        const formattedDate = new Date(date).toISOString().split('T')[0];
-        const fileName = `${formattedDate}_${reportType}_${barName.replace(/\s+/g, '_')}.${format}`;
+        const now = new Date(date);
+        const formattedDate = now.toISOString().split('T')[0];
+        const formattedTime = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // e.g., "14-25-32"
+        const fileName = `${formattedDate}_${formattedTime}_${reportType}_${barName.replace(/\s+/g, '_')}.${format}`;
         let filePath = path.join(folderPath, fileName);
         let fileArray = [];
     try {
